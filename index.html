@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PARADOX: Mars Frontier</title>
+<style>
+:root{--bg:#0b0a10;--pn:rgba(16,12,18,.88);--pn2:#1d1720;--ln:#3b2c33;--tx:#f3ebe6;--mu:#a8979c;--ac:#ff7a3d;--cy:#7fd8ff;--ok:#62e08e;--wa:#ffc94a;--bad:#ff6363}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:"Space Grotesk","Segoe UI",Roboto,Arial,sans-serif;color:var(--tx);user-select:none}
+#wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:1280px;height:720px;flex:none;overflow:hidden;background:var(--bg)}
+#cv{position:absolute;left:0;top:0;width:1280px;height:720px;display:block}
+.hud{position:absolute;background:var(--pn);border:1px solid var(--ln);border-radius:2px}
+.lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mu)}
+.hidden{display:none!important}
+button{font:inherit;font-size:12px;color:inherit;background:var(--pn2);border:1px solid var(--ln);border-radius:2px;cursor:pointer;padding:5px 10px;transition:background .12s,border-color .12s}
+button:hover:not(:disabled){border-color:var(--ac);background:#2b1e22}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:1px}
+button:disabled{opacity:.38;cursor:default}
+button.pri{background:var(--ac);border-color:var(--ac);color:#1c0b03;font-weight:700}
+button.pri:hover:not(:disabled){background:#ff935f}
+.ok{color:var(--ok)}.wa{color:var(--wa)}.bad{color:var(--bad)}.mu{color:var(--mu)}.cy{color:var(--cy)}
+.num{font-variant-numeric:tabular-nums}
+#hudL{left:12px;top:12px;width:250px;padding:8px 10px}
+.bar{display:grid;grid-template-columns:92px 1fr 34px;align-items:center;gap:6px;height:17px}
+.bar i{display:block;height:6px;background:#2a2026;position:relative}
+.bar i b{position:absolute;left:0;top:0;bottom:0;background:var(--ok);width:50%;transition:width .15s}
+.bar em{font-style:normal;font-size:11px;text-align:right}
+#env{font-size:11px;color:var(--mu);margin-top:6px;line-height:1.5}
+#env b{color:var(--tx);font-weight:600}
+#hudTop{left:274px;top:12px;width:760px;padding:6px 10px;display:flex;gap:12px;align-items:center}
+#cr{font-size:20px;font-weight:700;color:var(--wa);min-width:118px}
+#cr small{display:block;font-size:10px;letter-spacing:.14em;color:var(--mu);font-weight:400}
+#res{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 8px;flex:1}
+.rc{font-size:11px;display:flex;justify-content:space-between;border-bottom:1px solid #2a2026;padding:1px 0}
+.rc span{color:var(--mu)}
+#miniBox{left:1046px;top:12px;width:222px;padding:6px}
+#mini{display:block;width:208px;height:208px;background:#050306}
+#miniTxt{font-size:11px;color:var(--mu);margin-top:4px;line-height:1.4}
+#mis{left:12px;top:150px;width:250px;padding:8px 10px;font-size:12px;line-height:1.45}
+#mis b{display:block;font-size:13px;margin:2px 0}
+#veh{left:12px;bottom:12px;width:280px;padding:8px 10px;font-size:12px;line-height:1.5}
+#veh{left:12px;bottom:64px;width:280px;padding:8px 10px;font-size:12px;line-height:1.5}
+#hot{position:absolute;left:12px;bottom:12px;width:270px;display:flex;gap:3px}
+#hot button{flex:1;height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--pn);position:relative;overflow:hidden}
+#hot button kbd{font-family:inherit;font-size:10px;color:var(--ac);letter-spacing:.08em}
+#hot button span{font-size:11px}
+#hot .cd{position:absolute;left:0;bottom:0;height:3px;background:var(--cy);width:0}
+#quickbar{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;display:flex;gap:3px;padding:4px;background:rgba(12,9,12,.92);border:1px solid #75616a;z-index:4}
+#quickbar button{width:44px;height:44px;padding:2px;position:relative;background:#272126;border:2px solid #68545a;display:flex;align-items:center;justify-content:center}
+#quickbar button.sel{border:2px solid #ffbf58;box-shadow:0 0 0 1px #fff inset}
+#quickbar img{width:30px;height:30px;image-rendering:pixelated}
+#quickbar kbd{position:absolute;left:3px;top:1px;color:#ffb46f;font-size:9px}
+#quickbar b{position:absolute;right:2px;bottom:0;font-size:11px;text-shadow:1px 1px 2px #000}
+#log{left:928px;bottom:12px;width:340px;height:118px;padding:6px 8px;font-size:11px;line-height:1.45;overflow:hidden}
+#log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d9cdd0}
+#log .t{color:var(--mu);margin-right:5px}
+#log .ok{color:var(--ok)}#log .bad{color:var(--bad)}#log .wa{color:var(--wa)}#log .auto{color:var(--cy)}
+#prompt{position:absolute;left:340px;width:600px;bottom:76px;text-align:center;font-size:13px;pointer-events:none}
+#prompt>span{background:var(--pn);border:1px solid var(--ln);padding:5px 12px;display:inline-block}
+#prompt kbd{font-family:inherit;color:var(--ac);font-weight:700}
+#prog{height:3px;background:#2a2026;margin-top:4px}#prog i{display:block;height:100%;background:var(--ac)}
+#banner{position:absolute;left:240px;width:800px;top:100px;text-align:center;pointer-events:none;opacity:0;transition:opacity .35s;font-size:24px;font-weight:700;letter-spacing:.12em;text-shadow:0 2px 6px #000}
+#banner.show{opacity:1}#banner small{display:block;font-size:13px;letter-spacing:0;font-weight:400;color:#eadcd5}
+#toast{position:absolute;left:300px;width:680px;bottom:124px;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s;font-size:13px}
+#toast.show{opacity:1}#toast span{background:#2b1a14;border:1px solid var(--ac);padding:5px 12px;display:inline-block}
+#tut{left:420px;top:90px;width:440px;padding:10px 12px;border-color:var(--ac)}
+#tut b{display:block;font-size:15px;margin:3px 0;color:var(--ac)}#tut p{font-size:12px;color:#e2d6d1;line-height:1.45}
+#tut button{margin-top:8px;font-size:11px}
+#panel{position:absolute;left:150px;top:70px;width:980px;height:560px;background:rgba(14,10,14,.97);border:1px solid var(--ln);border-radius:2px;display:flex;flex-direction:column;z-index:5}
+#pHead{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--ln)}
+#pTitle{font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);min-width:180px}
+#pTabs{display:flex;flex:1}
+#pTabs button{border-radius:0;margin-left:-1px}#pTabs button.on{background:var(--tx);color:#140d10;border-color:var(--tx)}
+#pBody{flex:1;overflow:auto;padding:12px 14px;font-size:12px}
+table{width:100%;border-collapse:collapse}td,th{padding:5px 6px;border-bottom:1px solid #2c2228;text-align:left;vertical-align:middle}
+th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);font-weight:400}
+td button{padding:3px 7px;font-size:11px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ln);border-left:1px solid var(--ln)}
+.cell{border-right:1px solid var(--ln);border-bottom:1px solid var(--ln);padding:8px;display:flex;flex-direction:column;gap:4px;min-height:110px}
+.cell b{font-size:13px}.cell p{color:var(--mu);line-height:1.35;flex:1}
+.cell.done{background:#14211a}.cell.lock{opacity:.55}
+.sec{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ac);margin:14px 0 6px}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid #2c2228}
+select,input[type=number]{font:inherit;font-size:12px;background:var(--pn2);color:var(--tx);border:1px solid var(--ln);border-radius:2px;padding:3px 4px}
+input[type=number]{width:64px}
+.chip{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border:1px solid var(--ln)}
+.chip.t{color:var(--ok);border-color:#2d6a44}.chip.f{color:var(--mu)}.chip.x{color:var(--wa);border-color:#7a5d1c}
+#buildBar{left:300px;top:90px;width:680px;padding:8px 12px;font-size:12px;text-align:center;border-color:var(--ac)}
+#overlay{position:absolute;inset:0;background:rgba(6,3,6,.72);display:flex;align-items:center;justify-content:center;z-index:10}
+.card{width:640px;max-height:650px;overflow:auto;background:#140e12;border:1px solid var(--ln);border-radius:2px;padding:24px 30px}
+.card h1{font-size:40px;letter-spacing:.06em;line-height:1.05}.card h1 span{color:var(--ac)}
+.card h2{font-size:20px;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin-bottom:10px}
+.card p,.card li{font-size:13px;line-height:1.55;color:#ddd0cb}.card ul{padding-left:18px;margin:6px 0 10px}
+.menu{display:flex;flex-direction:column;gap:6px;margin:20px 0 10px;width:300px}.menu button{padding:10px;font-size:14px;text-align:left}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--ln);font-size:13px}
+.srow input[type=range]{width:220px;accent-color:var(--ac)}.srow input[type=checkbox]{width:16px;height:16px;accent-color:var(--ac)}
+.foot{font-size:11px!important;color:#7a6a70!important;margin-top:12px}
+kbd{font-family:inherit}
+/* ===== v2: инвентарь в стиле блочных песочниц ===== */
+#inv{position:absolute;left:250px;top:64px;width:780px;background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:10px 12px;color:#3f3f3f;font-family:"Courier New",Consolas,monospace;font-weight:700;z-index:6}
+#inv .ih{display:flex;justify-content:space-between;align-items:center;font-size:15px;margin-bottom:8px}
+#inv .ih span{display:flex;align-items:center;gap:10px;font-size:12px}
+#inv button{font-family:inherit;font-weight:700;background:#7a7a7a;color:#fff;border:2px solid;border-color:#b0b0b0 #3a3a3a #3a3a3a #b0b0b0;border-radius:0;padding:4px 9px;text-shadow:1px 1px 0 #3f3f3f}
+#inv button:hover:not(:disabled){background:#7f86b8;border-color:#c4c9ee #3a3a5a #3a3a5a #c4c9ee}
+#inv button:disabled{opacity:.45}
+#inv .itop{display:grid;grid-template-columns:150px 1fr;gap:12px;height:236px}
+#inv .pv{background:#000;border:2px solid;border-color:#373737 #fff #fff #373737;display:flex;flex-direction:column;align-items:center}
+#inv .pv canvas{display:block}
+#inv .pst{color:#e0e0e0;font-size:11px;text-align:center;line-height:1.4;margin-top:4px}
+#inv .craft{display:flex;flex-direction:column;min-height:0}
+#inv .ctabs{display:flex;align-items:center;gap:0;margin-bottom:4px}
+#inv .ctabs span{flex:1;font-size:13px}
+#inv .ctabs button{padding:2px 10px;font-size:11px}
+#inv .ctabs button.on{background:#3f3f3f;border-color:#222 #777 #777 #222}
+#inv .clist{flex:1;overflow:auto;background:#8b8b8b;border:2px solid;border-color:#373737 #fff #fff #373737;padding:4px}
+#inv .rcp{display:grid;grid-template-columns:44px 1fr 92px;align-items:center;gap:8px;padding:3px 4px;background:#a9a9a9;margin-bottom:3px;border:1px solid #777}
+#inv .rcp.no{background:#9a9a9a;color:#5a5a5a}
+#inv .rn b{display:block;font-size:12px}
+#inv .rn em{display:block;font-style:normal;font-size:10px;color:#2f5a2f}
+#inv .ing{display:inline-flex;align-items:center;gap:2px;font-size:11px;margin-right:8px}
+#inv .ing img{width:16px;height:16px;image-rendering:pixelated}
+#inv .ing.lack{color:#a01010}
+#inv .ibot{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:10px}
+#inv .sgrid{display:grid;grid-template-columns:repeat(9,44px);gap:2px}
+#inv .hotrow{margin-top:8px}
+#inv .slot{width:44px;height:44px;background:#8b8b8b;border:2px solid;border-color:#373737 #fff #fff #373737;position:relative;display:flex;align-items:center;justify-content:center}
+#inv .slot[data-k],#inv .slot[data-tk]{cursor:pointer}
+#inv .slot img{width:32px;height:32px;image-rendering:pixelated;pointer-events:none}
+#inv .slot b{position:absolute;right:2px;bottom:0;color:#fff;font-size:13px;text-shadow:2px 2px 0 #3f3f3f;pointer-events:none}
+#inv .slot:hover{background:#a8a8a8}
+#inv .slot.sel{outline:2px solid #fff;outline-offset:-5px}
+#inv .slot.sm{width:40px;height:40px}
+#inv .det{background:#8b8b8b;border:2px solid;border-color:#373737 #fff #fff #373737;padding:8px 10px;color:#fff;font-size:12px;line-height:1.45;text-shadow:1px 1px 0 #3f3f3f}
+#inv .dh{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+#inv .dh img{width:40px;height:40px;image-rendering:pixelated}
+#inv .dh b{display:block;font-size:14px;color:#ffff8a}
+#inv .det button{margin-top:8px;width:100%}
+#inv .empty{color:#eee;font-size:12px;padding:6px}
+#inv .xtra{font-size:11px;margin-top:4px;color:#7a1010}
+#tip{position:absolute;background:#100010;border:2px solid #2b0a66;outline:1px solid #000;color:#fff;padding:5px 8px;font-size:12px;font-family:"Courier New",Consolas,monospace;pointer-events:none;z-index:9;max-width:250px;line-height:1.4}
+#tip b{display:block;color:#fff}#tip span{color:#aaa}
+#adv{position:absolute;right:12px;top:262px;width:256px;background:#212121;border:2px solid #555;outline:2px solid #000;display:flex;gap:10px;align-items:center;padding:8px 10px;transform:translateX(300px);transition:transform .3s ease-out;z-index:8;font-family:"Courier New",Consolas,monospace;pointer-events:none}
+#adv.show{transform:none}
+#adv img{width:32px;height:32px;image-rendering:pixelated}
+#adv b{display:block;color:#ffff55;font-size:13px}#adv span{color:#fff;font-size:13px}
+
+/* ===== v3 ===== */
+#mis{top:196px}
+.st{display:grid;grid-template-columns:22px 32px 1fr 74px;align-items:center;gap:6px;height:24px}
+.st svg{width:20px;height:20px;display:block}
+.st em{font-style:normal;font-size:15px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.st i{display:block;height:5px;background:#2a2026;position:relative}
+.st i b{position:absolute;left:0;top:0;bottom:0;width:50%;transition:width .2s}
+.st .lbl{font-size:9px}
+.st.low em{color:var(--bad)}.st.low svg{animation:pulse .7s infinite alternate}
+@keyframes pulse{to{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.st.low svg{animation:none}}
+.chip.b{color:var(--bad);border-color:#7a2a2a}
+#pBody.tight{padding:0;overflow:hidden}
+.tk{display:grid;grid-template-columns:180px 1fr 310px;height:100%}
+.tk .cats{border-right:1px solid var(--ln);display:flex;flex-direction:column;overflow:auto}
+.tk .cats button{border:0;border-bottom:1px solid var(--ln);border-left:3px solid transparent;border-radius:0;text-align:left;padding:10px;display:flex;gap:8px;align-items:center;background:transparent}
+.tk .cats button.on{background:#221a1d;border-left-color:var(--cy)}
+.tk .cats img{width:20px;height:20px;image-rendering:pixelated}
+.tk .cats em{margin-left:auto;font-style:normal;font-size:10px;color:var(--ok)}
+.tk .bp{padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;overflow:auto}
+.bpc{border:1px solid var(--ln);background:#120d10;padding:10px 4px 8px;text-align:center;cursor:pointer;position:relative;transition:border-color .12s}
+.bpc:hover{border-color:var(--mu)}
+.bpc img{width:48px;height:48px;image-rendering:pixelated}
+.bpc span{display:block;font-size:11px;margin-top:4px;line-height:1.25}
+.bpc.ok{border-color:#2d6a44}.bpc.no img{filter:grayscale(.85) brightness(.7)}.bpc.no span{color:var(--mu)}
+.bpc.on{outline:2px solid var(--cy);outline-offset:-1px}
+.bpc.done::after{content:"\2713";position:absolute;right:5px;top:3px;color:var(--ok);font-weight:700}
+.tk .dt{border-left:1px solid var(--ln);padding:14px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.dt .big{display:flex;gap:12px;align-items:center}
+.dt .big img{width:64px;height:64px;image-rendering:pixelated;background:#120d10;border:1px solid var(--ln);padding:4px}
+.dt h3{font-size:16px;color:var(--cy);line-height:1.2}
+.dt p{line-height:1.45}
+.mat{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #2c2228}
+.mat img{width:24px;height:24px;image-rendering:pixelated}
+.mat small{display:block;font-size:10px}
+.mat b{font-variant-numeric:tabular-nums}
+.dt .sum{font-size:12px;font-weight:700}
+.dt .act{margin-top:auto;display:flex;flex-direction:column;gap:6px}
+.dt .act button{padding:9px;font-size:13px}
+.fab{height:6px;background:#2a2026}.fab i{display:block;height:100%;background:var(--cy);width:0}
+#inv .ihint{font-size:11px;color:#4a4a4a;margin-top:6px}
+#drag{position:absolute;pointer-events:none;z-index:12;width:40px;height:40px}
+#drag img{width:32px;height:32px;image-rendering:pixelated;position:absolute;left:4px;top:4px}
+#drag b{position:absolute;right:0;bottom:-2px;color:#fff;font:700 13px "Courier New",monospace;text-shadow:2px 2px 0 #3f3f3f}
+#drag span{position:absolute;left:44px;top:10px;white-space:nowrap;background:#7a1010;color:#fff;font:700 11px "Courier New",monospace;padding:2px 6px;display:none}
+#drag.out span{display:block}
+
+/* ===== Финальный экран победы (добавлен отдельно, игровая логика не меняется) ===== */
+#victoryScreen{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
+  background:#000;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 1.1s ease,visibility 1.1s;
+  overflow:hidden;text-align:center}
+#victoryScreen.show{opacity:1;visibility:visible;pointer-events:auto}
+#victoryScreen:before{content:"";position:absolute;inset:0;opacity:.32;
+  background-image:radial-gradient(1px 1px at 12% 22%,#fff 98%,transparent),radial-gradient(1px 1px at 78% 18%,#d9c7a2 98%,transparent),
+  radial-gradient(1px 1px at 66% 77%,#fff 98%,transparent),radial-gradient(1px 1px at 24% 82%,#d9c7a2 98%,transparent),
+  radial-gradient(1px 1px at 90% 58%,#fff 98%,transparent),radial-gradient(1px 1px at 43% 36%,#fff 98%,transparent);
+  background-size:100% 100%}
+#victoryScreen .victoryContent{position:relative;padding:30px;animation:victoryRise 1.5s ease both}
+#victoryScreen h1{font-size:clamp(26px,4vw,52px);font-weight:600;letter-spacing:.12em;line-height:1.35;
+  color:#f5eee5;text-shadow:0 0 24px rgba(255,190,112,.22)}
+#victoryScreen h1 span{display:block;color:#ffb36c;font-size:.72em;letter-spacing:.18em;margin-top:10px}
+#victoryScreen .victoryLine{width:110px;height:1px;background:linear-gradient(90deg,transparent,#d99b63,transparent);margin:30px auto 22px}
+#victoryScreen .victoryCredit{font-size:13px;letter-spacing:.28em;color:#b8a9a1;text-transform:uppercase}
+@keyframes victoryRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){#victoryScreen,#victoryScreen .victoryContent{transition:none;animation:none}}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<canvas id="cv" width="1280" height="720"></canvas>
+<div id="hudL" class="hud">
+  <div class="st" id="sHp" title="Здоровье"><svg viewBox="0 0 20 20"><path d="M10 17 2.6 9.6A4.3 4.3 0 0 1 10 4.6a4.3 4.3 0 0 1 7.4 5Z" fill="#ff5a5a" stroke="#4a0f12" stroke-width="1.2"/><path d="M5.5 6.6a2 2 0 0 1 2-1" stroke="#ffc2c2" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg><em></em><i><b></b></i><span class="lbl">Здоровье</span></div>
+  <div class="st" id="sO2" title="Кислород"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#1c5f7a" stroke="#7fd8ff" stroke-width="1.5"/><circle cx="6.8" cy="6.8" r="1.7" fill="#d8f6ff"/><text x="10.6" y="13.4" font-size="7.5" font-weight="700" text-anchor="middle" fill="#e6fbff" font-family="Arial">O2</text></svg><em></em><i><b></b></i><span class="lbl">Кислород</span></div>
+  <div class="st" id="sFd" title="Сытость"><svg viewBox="0 0 20 20"><path d="M3.5 5.5C5 2.2 10.5 1.8 12.6 4.6c1.9 2.5.9 5.7-1.6 7.1L8.3 12.6C5.4 13 2.2 9 3.5 5.5Z" fill="#c8742e" stroke="#4a2410" stroke-width="1.1"/><path d="M5.5 5.5c.8-1.4 2.6-1.9 4-1.3" stroke="#f2b26b" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="m10 11.5 4.3 4.3" stroke="#f3ece0" stroke-width="2.4" stroke-linecap="round"/><circle cx="15.4" cy="14.8" r="1.6" fill="#f3ece0"/><circle cx="14.4" cy="16.8" r="1.6" fill="#f3ece0"/></svg><em></em><i><b></b></i><span class="lbl">Сытость</span></div>
+  <div class="st" id="sEn" title="Энергия"><svg viewBox="0 0 20 20"><path d="M11.5 1.5 4 11h5l-1.5 7.5L16 8.5h-5Z" fill="#ffc94a" stroke="#5a3d06" stroke-width="1.1" stroke-linejoin="round"/></svg><em></em><i><b></b></i><span class="lbl">Энергия</span></div>
+  <div class="st" id="sSt" title="Выносл."><svg viewBox="0 0 20 20"><path d="M6 2h5v8l5 2.4c1 .5 1.5 1.4 1.5 2.6V17H3V2Z" fill="#a9b6c2" stroke="#2a3038" stroke-width="1.1" stroke-linejoin="round"/><path d="M3 14.5h14.5" stroke="#2a3038" stroke-width="1.1"/><path d="M6 6h5" stroke="#62e08e" stroke-width="1.4"/></svg><em></em><i><b></b></i><span class="lbl">Выносл.</span></div>
+  <div id="env"></div>
+</div>
+<div id="hudTop" class="hud"><div id="cr"></div><div id="res"></div></div>
+<div id="miniBox" class="hud"><canvas id="mini" width="208" height="208"></canvas><div id="miniTxt"></div></div>
+<div id="mis" class="hud"></div>
+<div id="veh" class="hud"></div>
+<div id="quickbar"></div><div id="hot">
+  <button data-h="scan"><kbd>Q</kbd><span>Сканер</span><i class="cd" id="scanCd"></i></button>
+  <button data-h="inv"><kbd>I</kbd><span>Инвентарь</span></button>
+  <button data-h="build"><kbd>B</kbd><span>Строить</span></button>
+  <button data-h="tech"><kbd>T</kbd><span>Технологии</span></button>
+  <button data-h="auto"><kbd>ENTER</kbd><span>Автоматика</span></button>
+  <button data-h="colony"><kbd>M</kbd><span>Колония</span></button>
+  <button data-h="menu"><kbd>ESC</kbd><span>Меню</span></button>
+</div>
+<div id="log" class="hud"></div>
+<div id="prompt"></div>
+<div id="banner"></div>
+<div id="victoryScreen" aria-label="Миссия выполнена"><div class="victoryContent"><h1>ПОЗДРАВЛЯЮ<span>МИССИЯ ВЫПОЛНЕНА</span></h1><div class="victoryLine"></div><div class="victoryCredit">made by AZhoS</div></div></div>
+
+<div id="toast"></div>
+<div id="adv"></div>
+<div id="tut" class="hud hidden"><div class="lbl" id="tutN"></div><b id="tutT"></b><p id="tutD"></p><button id="tutSkip">Пропустить обучение</button></div>
+<div id="buildBar" class="hud hidden"></div>
+<div id="panel" class="hidden"><div id="pHead"><b id="pTitle"></b><div id="pTabs"></div><button id="pClose">Закрыть · Esc</button></div><div id="pBody"></div></div>
+<div id="inv" class="hidden"></div>
+<div id="tip" class="hidden"></div>
+<div id="drag" class="hidden"></div>
+<div id="overlay"><div class="card" id="card"></div></div>
+</div></div>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id), cv=$('cv'),ctx=cv.getContext('2d'), mini=$('mini'),mx=mini.getContext('2d');
+const W=1280,H=720,TS=40,MAP=120,STACK=64,SAVE_KEY='paradox_mars_save_v1';
+/* ---------- ЗВУКИ И МУЗЫКА ---------- */
+const AUDIO_FILES={
+ background:['audio/background-1.mp3','audio/background-2.mp3','audio/background-3.wav'],
+ domeEnter:'audio/dome-enter.wav',
+ mining:'audio/metal-mining.wav',
+ scanner:'audio/scanner.wav',
+ notification:'audio/notification.wav',
+ construction:'audio/construction.wav'
+};
+let ambientAudio=null,ambientIndex=-1;
+const AUDIO_PREF_KEY='paradox_audio_settings_v1';
+let audioPrefs={music:28,sfx:68};
+try{const saved=JSON.parse(localStorage.getItem(AUDIO_PREF_KEY)||'null');if(saved){audioPrefs.music=Math.max(0,Math.min(100,Number(saved.music)||0));audioPrefs.sfx=Math.max(0,Math.min(100,Number(saved.sfx)||0));}}catch(e){}
+function saveAudioPrefs(){try{localStorage.setItem(AUDIO_PREF_KEY,JSON.stringify(audioPrefs));}catch(e){}}
+function applyMusicVolume(){if(ambientAudio)ambientAudio.volume=audioPrefs.music/100;}
+function nextAmbient(){
+ if(ambientAudio){ambientAudio.pause();ambientAudio.onended=null;ambientAudio.onerror=null;}
+ ambientIndex=(ambientIndex+1)%AUDIO_FILES.background.length;
+ ambientAudio=new Audio(AUDIO_FILES.background[ambientIndex]);
+ ambientAudio.preload='auto';ambientAudio.volume=audioPrefs.music/100;ambientAudio.loop=false;
+ ambientAudio.onended=nextAmbient;
+ ambientAudio.onerror=()=>{if(ambientAudio&&ambientAudio.error)nextAmbient();};
+ const p=ambientAudio.play();if(p&&p.catch)p.catch(()=>{});
+}
+function startAmbient(){
+ if(ambientAudio&&!ambientAudio.ended){const p=ambientAudio.play();if(p&&p.catch)p.catch(()=>{});return;}
+ nextAmbient();
+}
+function stopAmbient(){if(ambientAudio)ambientAudio.pause();}
+function playSfx(name){
+ const src=AUDIO_FILES[name];if(!src||audioPrefs.sfx<=0)return;
+ const a=new Audio(src);a.preload='auto';a.volume=audioPrefs.sfx/100;
+ const p=a.play();if(p&&p.catch)p.catch(()=>{});
+}
+
+let running=false,paused=false,last=0,saveTick=0,hudTick=0,gt=0,world=[],nodes=[],buildings=[],items=[],fx=[],keys=new Set(),camera={x:0,y:0},player={x:MAP*TS/2,y:MAP*TS/2,hp:100,o2:100,en:100,st:100,fd:100},res={iron:30,copper:18,ice:20,food:20,water:20,fuel:15,mats:12},credits=250,day=1,time=8,scanCd=0,buildMode=null,logs=[],selected=null,
+discovered=new Set(),upgrades={drill:0,scan:0},hero={face:1,anim:0,moving:false},near=null,invOpen=false,invSel=null,invFilter='all',
+slots=new Array(36).fill(null),held=null,overflow=0,inside=null,room={x:665,y:530},grid={e:10,cap:20,prod:0,use:0},seed=Math.floor(Math.random()*1e9),
+openWin=null,menuOn=false,fab=null,techCat='res',techSel=null,autoUi=0,autoMined=0,wires=[],wireStart=null,tutorialStage=0,quickIndex=0,rocketLaunched=false,rocketRepaired=false;
+const colors=['#b45c36','#c16b43','#78452f','#8c5037','#d08a55','#b8d9df'];
+const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),randInt=(a,b)=>Math.floor(rand(a,b+1)),dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
+
+/* ---------- ПРЕДМЕТЫ ---------- */
+const ITEMS={
+ oil:{n:'Подземная нефть',s:'canister',c:['#302b26','#9a7b43'],d:'Сырьё из глубоких пластов. Бур перерабатывает его в ракетное топливо.'},
+ apple:{n:'Марсианское яблоко',s:'leaf',c:['#bd3c2e','#f7a45a'],d:'Свежая пища с дерева. Использовать: +30 сытости.'},
+ iron:{n:'Железная руда',s:'ore',c:['#b07a63','#e2b49e'],d:'Сырьё из месторождений. Строительство и крафт.'},
+ copper:{n:'Медная руда',s:'ore',c:['#c0702c','#ffb36c'],d:'Сырьё. Из неё тянут медную проволоку.'},
+ ice:{n:'Лёд',s:'crystal',c:['#7fc6dc','#e6fbff'],d:'Замёрзшая вода. Топится в воду, нужен для баллонов O₂.'},
+ silicon:{n:'Кремний',s:'crystal',c:['#7a7fc0','#d5d8f5'],d:'Основа микросхем.'},
+ titanium:{n:'Титановая руда',s:'ore',c:['#8e9aa6','#f0f6fb'],d:'Редкое сырьё. Месторождения светятся серебром.'},
+ food:{n:'Еда',s:'leaf',c:['#d94b3b','#ff9a8a'],d:'Использовать: +25 сытости, +12 энергии.'},
+ water:{n:'Вода',s:'drop',c:['#3fa3e8','#bfe6ff'],d:'Нужна для пайков и аптечек.'},
+ fuel:{n:'Топливо',s:'canister',c:['#c23b2b','#ffc94a'],d:'Запас топлива экспедиции.'},
+ mats:{n:'Стройматериалы',s:'box',c:['#9c7a54','#c9a57a','#5e4630'],d:'Нужны для буровых установок.'},
+ scrap:{n:'Металлолом',s:'scrap',c:['#8f8f96','#c9c9d0'],d:'Мусор. Переплавляется в железо и стройматериалы.'},
+ cable:{n:'Старый кабель',s:'coil',c:['#3a3a3a','#d9632e'],d:'Мусор. Разбирается на проволоку и пластик.'},
+ plastic:{n:'Пластик',s:'plate',c:['#e8e1d4','#ffffff','#b8ae9c'],d:'Мусор. Для аптечек и стройматериалов.'},
+ ebits:{n:'Электронный лом',s:'chip',c:['#2f6b3a','#e0c060','#1c3d22'],d:'Мусор. Нужен для микросхем.'},
+ oldbat:{n:'Разряженная батарея',s:'battery',c:['#5a5a5a','#8a3a2a'],d:'Мусор. Можно перезарядить в батарею.'},
+ shard:{n:'Обломок панели',s:'panel',c:['#2a4a7a','#7fb0e0'],d:'Мусор. Разбирается на кремний.'},
+ cwire:{n:'Медная проволока',s:'coil',c:['#b8662a','#ffb36c'],d:'Компонент для электроники.'},
+ circuit:{n:'Микросхема',s:'chip',c:['#1f4f8a','#ffd36c','#0d2a4d'],d:'Компонент для улучшений.'},
+ plate:{n:'Титановая пластина',s:'bar',c:['#b9c4ce','#f4f8fb'],d:'Прочный компонент для бура.'},
+ o2tank:{n:'Баллон O₂',s:'bottle',c:['#e8e4df','#7fd8ff'],d:'Использовать: +40% O₂ скафандра.'},
+ battery:{n:'Батарея',s:'battery',c:['#3a3a3a','#62e08e'],d:'Использовать: +40% энергии.'},
+ medkit:{n:'Аптечка',s:'kit',c:['#f0ece6','#ff4d4d'],d:'Использовать: +35% здоровья.'},
+ ration:{n:'Паёк',s:'box',c:['#6d7f3a','#a9c060','#3f4a20'],d:'Использовать: +45 сытости, +40 выносливости.'},
+ crate:{n:'Ящик снабжения',s:'crate',c:['#8a6a3c','#b8915a','#4a3620'],d:'Содержит случайные припасы.',ground:true}
+};
+const ITEM_ORDER=Object.keys(ITEMS).filter(k=>!ITEMS[k].ground);
+const nm=k=>ITEMS[k]?ITEMS[k].n:k;
+const have=k=>Math.floor(res[k]||0);
+const ORE_COL={oil:'#9a7b43',iron:'#e2b49e',copper:'#ffb36c',ice:'#d8f6ff',silicon:'#c5c9ee',titanium:'#f6fbff'};
+const SHORT={oil:'Нефть',apple:'Ябл.',iron:'Fe',copper:'Cu',ice:'Лёд',silicon:'Si',titanium:'Ti',water:'Вода',food:'Еда',mats:'СМ',scrap:'Лом',plastic:'Пласт.',cwire:'Пров.',circuit:'Чип',fuel:'Топл.',o2tank:'O₂'};
+const HUD_KEYS=Object.keys(SHORT);
+const BUILD_DEFS={
+ hab:{n:'Жилой купол',cost:{iron:12,copper:5},d:'Большой жилой комплекс с отдельными комнатами и коридором. Внутри размещаются модули.'},
+ solar:{n:'Солнечная панель',cost:{iron:8,copper:6},d:'Крупная панель. Днём вырабатывает энергию; для питания купола и ракеты соедините её медным проводом.'},
+ drill:{n:'Буровая установка',cost:{iron:15,mats:4},d:'Крупный автоматический бур. Добывает руду и нефть из подземных пластов. Требует провод к солнечной сети и к ракете.'},
+ farm:{n:'Теплица',cost:{iron:10,water:5},d:'Раз в 30 с: 1 вода → 2 еды. Потребляет 0,6 эн./с.'}};
+const MODS={
+ o2gen:{n:'Генератор кислорода',cost:{iron:6,cwire:3,ice:4},pw:1,d:'Раз в 20 с: 1 лёд → баллон O₂. Пока вы в куполе, пополняет скафандр.'},
+ tree:{n:'Установка для деревьев',cost:{iron:4,water:4,plastic:2},pw:.8,d:'Выращивает дерево: раз в 40 с 1 вода → 3 еды.'}};
+const KIND_BY_NAME={'Жилой модуль':'hab','Жилой купол':'hab','Солнечная панель':'solar','Буровая установка':'drill','Теплица':'farm','Шаттёр':'shuttle','Шаттл':'shuttle'};
+const PWR={drill:1.5,farm:.6},PERIOD={drill:12,farm:30,o2gen:20,tree:40},FAB_T=1;
+const RECIPES=[
+ {id:'water',in:{ice:2},out:{water:2},t:'Растопить лёд'},
+ {id:'cwire',in:{copper:2},out:{cwire:3},t:'Медный провод'},
+ {id:'cable',in:{cable:2},out:{cwire:1,plastic:1},t:'Разобрать кабель'},
+ {id:'scrap',in:{scrap:2},out:{iron:1},t:'Переплавить лом'},
+ {id:'mats',in:{scrap:3,plastic:1},out:{mats:2}},
+ {id:'shard',in:{shard:1},out:{silicon:2},t:'Разобрать панель'},
+ {id:'plate',in:{titanium:2},out:{plate:1}},
+ {id:'circuit',in:{ebits:2,silicon:1,cwire:1},out:{circuit:1}},
+ {id:'battery',in:{oldbat:1,cwire:1},out:{battery:1},t:'Перезарядить батарею'},
+ {id:'o2tank',in:{iron:2,ice:3},out:{o2tank:1}},
+ {id:'ration',in:{food:2,water:1},out:{ration:1}},
+ {id:'medkit',in:{plastic:2,water:2,food:1},out:{medkit:1}},
+ {id:'drill',in:{plate:3,circuit:2,iron:6},up:'drill',t:'Бур Mk II',d:'+2 к добыче за каждое нажатие E',icon:'plate'},
+ {id:'scan',in:{circuit:2,cwire:4,shard:2},up:'scan',t:'Сканер Mk II',d:'Радиус ×1.7, перезарядка 5 с',icon:'circuit'}
+];
+const USE={
+ o2tank:{t:'+40% O₂',ok:()=>player.o2<100,a:()=>{player.o2=Math.min(100,player.o2+40);}},
+ battery:{t:'+40% энергии',ok:()=>player.en<100,a:()=>{player.en=Math.min(100,player.en+40);}},
+ medkit:{t:'+35% здоровья',ok:()=>player.hp<100,a:()=>{player.hp=Math.min(100,player.hp+35);}},
+ ration:{t:'+45 сытости, +40 вынос.',ok:()=>player.fd<100||player.st<100,a:()=>{player.fd=Math.min(100,player.fd+45);player.st=Math.min(100,player.st+40);player.en=Math.min(100,player.en+15);}},
+ apple:{t:'+30 сытости',ok:()=>player.fd<100,a:()=>{player.fd=Math.min(100,player.fd+30);}},
+ food:{t:'+25 сытости, +12 эн.',ok:()=>player.fd<100||player.en<100,a:()=>{player.fd=Math.min(100,player.fd+25);player.en=Math.min(100,player.en+12);player.st=Math.min(100,player.st+10);}}
+};
+
+/* ---------- ПИКСЕЛЬНЫЕ ИКОНКИ (генерируются один раз) ---------- */
+const ICONS={};
+function makeIcon(s,c){const k=document.createElement('canvas');k.width=k.height=16;const g=k.getContext('2d');const P=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h);};const a=c[0],b=c[1],d=c[2]||'#2a1a16';
+ switch(s){
+ case 'ore':P(4,5,8,8,'#5a4038');P(3,7,10,5,'#5a4038');P(5,4,5,1,'#6e5046');P(4,5,3,2,'#6e5046');P(5,6,2,2,b);P(9,8,2,2,b);P(6,10,2,1,a);P(10,5,1,1,a);P(7,8,1,1,a);P(4,9,1,1,b);break;
+ case 'crystal':P(7,2,2,1,b);P(6,3,4,2,b);P(5,5,6,6,a);P(6,11,4,2,a);P(7,13,2,1,a);P(6,5,1,4,b);P(11,8,2,5,a);P(11,7,1,1,b);P(3,9,2,4,a);break;
+ case 'drop':P(7,2,2,2,a);P(6,4,4,2,a);P(5,6,6,2,a);P(4,8,8,3,a);P(5,11,6,2,a);P(6,13,4,1,a);P(6,7,1,3,b);break;
+ case 'leaf':P(5,4,6,10,a);P(4,5,8,8,a);P(3,6,10,6,a);P(8,2,1,3,'#5a3b1f');P(9,2,3,2,'#62e08e');P(5,6,2,2,b);break;
+ case 'canister':P(4,3,8,11,a);P(6,1,3,2,'#333');P(5,6,6,4,b);P(10,3,1,11,'#7a2018');break;
+ case 'box':P(2,4,12,10,a);P(2,4,12,2,b);P(7,4,2,10,d);P(2,9,12,1,d);break;
+ case 'scrap':P(3,9,10,3,a);P(5,6,4,3,a);P(9,4,3,5,b);P(4,12,3,1,b);P(11,10,2,3,'#8a4a2a');P(6,7,1,1,'#8a4a2a');break;
+ case 'coil':P(3,4,10,8,a);P(3,5,10,1,b);P(3,7,10,1,b);P(3,9,10,1,b);P(7,6,2,4,'#2a1a16');P(12,11,3,1,a);break;
+ case 'plate':P(3,4,10,8,a);P(3,4,10,1,b);P(12,4,1,8,d);P(3,11,10,1,d);break;
+ case 'chip':P(4,4,8,8,a);for(let i=0;i<4;i++){P(5+i*2,2,1,2,b);P(5+i*2,12,1,2,b);P(2,5+i*2,2,1,b);P(12,5+i*2,2,1,b);}P(6,6,4,4,d);break;
+ case 'battery':P(4,3,8,11,a);P(6,2,4,1,'#cccccc');P(5,5,6,3,b);P(5,10,6,1,'#777777');break;
+ case 'panel':P(2,4,12,8,a);P(2,7,12,1,b);P(6,4,1,8,b);P(10,4,1,8,b);P(3,10,3,1,'#ffffff');P(11,5,2,1,'#ffffff');break;
+ case 'bar':P(2,7,12,4,a);P(3,6,12,1,b);P(2,11,12,1,'#5a6068');P(13,7,1,4,'#7a8590');break;
+ case 'bottle':P(5,3,6,11,a);P(6,1,4,2,'#888888');P(5,6,6,3,b);P(9,3,1,11,'#b8b2aa');break;
+ case 'kit':P(2,4,12,10,a);P(6,2,4,2,'#9a948c');P(7,6,2,6,b);P(5,8,6,2,b);break;
+ case 'crate':P(2,3,12,11,a);P(2,3,12,1,b);P(2,8,12,1,d);P(2,13,12,1,d);P(7,3,2,11,d);break;
+ case 'dome':P(5,4,6,1,b);P(4,5,8,1,a);P(3,6,10,2,a);P(2,8,12,5,a);P(2,13,12,1,d);P(7,10,2,3,'#f4b36c');P(5,6,2,1,b);P(3,9,2,1,'#7fd8ff');P(11,9,2,1,'#7fd8ff');break;
+ case 'solar':P(1,3,14,7,a);P(1,6,14,1,b);P(5,3,1,7,b);P(10,3,1,7,b);P(7,10,2,4,'#777777');P(4,14,8,1,'#555555');break;
+ case 'drill':P(4,1,8,3,'#777777');P(6,4,4,6,a);P(7,10,2,3,b);P(7,13,2,2,'#dddddd');P(3,8,2,6,'#555555');P(11,8,2,6,'#555555');P(3,13,10,1,'#555555');break;
+ case 'farm':P(2,5,12,9,a);P(2,5,12,1,b);P(4,9,2,4,'#3a8a3a');P(8,8,2,5,'#3a8a3a');P(11,10,2,3,'#3a8a3a');P(2,13,12,1,'#5a3b1f');break;
+ case 'o2gen':P(4,2,8,12,a);P(5,4,6,4,b);P(6,10,4,2,'#62e08e');P(3,14,10,1,'#555555');break;
+ case 'tree':P(7,9,2,5,'#6b4a2a');P(4,3,8,6,a);P(3,5,10,3,a);P(5,4,2,2,b);P(5,14,6,1,'#5a3b1f');break;
+ }
+ // тёмный контур вокруг силуэта
+ const im=g.getImageData(0,0,16,16),src=im.data,out=new Uint8ClampedArray(src);
+ for(let y=0;y<16;y++)for(let x=0;x<16;x++){const i=(y*16+x)*4;if(src[i+3])continue;let edge=false;for(const [ox,oy] of [[1,0],[-1,0],[0,1],[0,-1]]){const X=x+ox,Y=y+oy;if(X>=0&&Y>=0&&X<16&&Y<16&&src[(Y*16+X)*4+3]>0){edge=true;break;}}if(edge){out[i]=36;out[i+1]=22;out[i+2]=18;out[i+3]=255;}}
+ im.data.set(out);g.putImageData(im,0,0);return k;}
+for(const k in ITEMS){const c=makeIcon(ITEMS[k].s,ITEMS[k].c);ICONS[k]={c,url:c.toDataURL()};}
+const BIC={hab:['dome',['#c9c2bc','#efe9e2','#6b6460']],solar:['solar',['#2a4a7a','#7fb0e0']],drill:['drill',['#d08a3c','#ffd36c']],farm:['farm',['#9fd6e0','#e6fbff']],o2gen:['o2gen',['#d8d8d8','#7fd8ff']],tree:['tree',['#3fae4f','#7fe08e']]};
+for(const k in BIC){const c=makeIcon(BIC[k][0],BIC[k][1]);ICONS['B_'+k]={c,url:c.toDataURL()};}
+
+/* ---------- ПЕРСОНАЖ (пиксельный человечек) ---------- */
+function drawHero(c,x,y,p,face,frame,moving,t){
+ const s=moving?[0,1,0,-1][frame]:0,b=moving&&frame%2?-1:0,SU='#efe9e2',SH='#bdb2a8',OR='#ff7a3d',P=[];
+ const R=(gx,gy,w,h,col)=>P.push([gx,gy,w,h,col]);
+ R(-2-s,-5,2,4,SH);R(-2-s,-1,3,1,'#3d302b');               // задняя нога
+ R(-1+s,-10+b,2,4,SH);R(-1+s,-6+b,2,1,'#c85a28');          // задняя рука
+ R(-4,-11+b,2,6,'#7d8590');R(-4,-12+b,1,1,'#5b626b');       // ранец
+ R(-2,-11+b,5,6,SU);R(-2,-8+b,5,1,OR);R(-2,-6+b,5,1,'#8a7f78');R(1,-10+b,1,1,'#62e08e'); // торс
+ R(s,-5,2,4,SU);R(s,-1,3,1,'#4a3a35');                       // передняя нога
+ R(-2,-16+b,6,5,SU);R(-1,-17+b,4,1,SU);R(1,-15+b,3,3,'#3fb6e8');R(2,-15+b,1,1,'#c9f3ff'); // шлем
+ R(-2,-19+b,1,2,'#8a7f78');R(-2,-20+b,1,1,Math.floor(t*2)%2?OR:'#7a3a1d');               // антенна
+ R(-s,-10+b,2,4,SU);R(-s,-6+b,2,1,OR);                       // передняя рука
+ c.save();c.translate(Math.round(x),Math.round(y));c.scale(face,1);
+ c.fillStyle='#24140f';for(const q of P)c.fillRect(q[0]*p-1,q[1]*p-1,q[2]*p+2,q[3]*p+2);
+ for(const q of P){c.fillStyle=q[4];c.fillRect(q[0]*p,q[1]*p,q[2]*p,q[3]*p);}
+ c.restore();}
+
+/* ---------- МИР ---------- */
+const JUNK=[['scrap',30],['cable',18],['plastic',18],['ebits',12],['oldbat',8],['shard',10],['crate',6]];
+function pickJunk(){let r=Math.random()*102;for(const [k,w] of JUNK){if((r-=w)<0)return k;}return 'scrap';}
+function spawnJunk(n,cx,cy,r,minR){for(let i=0;i<n;i++){let x,y;if(cx===undefined){x=rand(TS,MAP*TS-TS);y=rand(TS,MAP*TS-TS);}else{const a=rand(0,Math.PI*2),d=rand(minR||0,r);x=clamp(cx+Math.cos(a)*d,TS,MAP*TS-TS);y=clamp(cy+Math.sin(a)*d,TS,MAP*TS-TS);}const k=pickJunk();items.push({x,y,k,n:k==='scrap'?randInt(1,3):1,id:Math.random()*100});}}
+function initWorld(){terrainCache.clear();world=[];nodes=[];buildings=[];items=[];const kinds=['iron','copper','ice','silicon'];const ore=()=>Math.random()<.1?'titanium':kinds[Math.floor(Math.random()*kinds.length)];
+ for(let y=0;y<MAP;y++){let row=[];for(let x=0;x<MAP;x++){let n=Math.random();row.push(n<.08?2:n<.25?1:0);if(Math.random()<.018){nodes.push({x:x*TS+TS/2,y:y*TS+TS/2,k:ore(),amount:Math.floor(rand(5,18)),seen:false});}}world.push(row);}
+ for(let i=0;i<8;i++){let a=rand(0,MAP*TS),b=rand(0,MAP*TS);nodes.push({x:a,y:b,k:kinds[i%4],amount:25,seen:true});}for(let i=0;i<18;i++)nodes.push({x:rand(TS,MAP*TS-TS),y:rand(TS,MAP*TS-TS),k:'oil',amount:randInt(45,90),seen:false});
+ const c=MAP*TS/2;[['iron',-150,-90],['ice',170,80],['copper',-70,180]].forEach(([k,ox,oy])=>nodes.push({x:c+ox,y:c+oy,k,amount:20,seen:true}));
+ spawnJunk(30,c,c,480,80);spawnJunk(135);}
+function ensureTitanium(){if(!nodes.some(n=>n.k==='titanium')){for(let i=0;i<14;i++)nodes.push({x:rand(TS,MAP*TS-TS),y:rand(TS,MAP*TS-TS),k:'titanium',amount:randInt(6,14),seen:false});}}
+
+/* ---------- СОХРАНЕНИЯ (совместимы с v1/v2) ---------- */
+function normB(b){b.k=b.k||KIND_BY_NAME[b.type]||'shuttle';if(b.k==='shuttle')b.type='Шаттл';if(b.k==='hab'){b.type='Жилой купол';if(!Array.isArray(b.mods)||b.mods.length!==6)b.mods=[null,null,null,null,null,null];}else if(BUILD_DEFS[b.k])b.type=BUILD_DEFS[b.k].n;if(b.on===undefined)b.on=true;b.t=b.t||0;b.st=b.st||'';if(b.ni===undefined)b.ni=-1;return b;}
+function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({ver:4,player,res,credits,day,time,nodes,buildings,logs,items,discovered:[...discovered],upgrades,slots,grid:{e:grid.e},seed,autoMined,wires,tutorialStage,rocketLaunched,rocketRepaired}));}catch(e){}}
+function loadGame(){try{let d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(!d)return false;if(d.player&&d.res&&Array.isArray(d.nodes)&&Array.isArray(d.buildings)){player=Object.assign({x:MAP*TS/2,y:MAP*TS/2,hp:100,o2:100,en:100,st:100,fd:100},d.player);res=d.res;credits=d.credits||0;day=d.day||1;time=d.time||8;nodes=d.nodes;buildings=d.buildings.map(normB);logs=Array.isArray(d.logs)?d.logs:[];
+ if(Array.isArray(d.items))items=d.items;
+ discovered=new Set(Array.isArray(d.discovered)?d.discovered:Object.keys(res).filter(k=>res[k]>0));
+ upgrades=Object.assign({drill:0,scan:0},d.upgrades||{});
+ slots=Array.isArray(d.slots)&&d.slots.length===36?d.slots.map(s=>s&&ITEMS[s.k]&&!ITEMS[s.k].ground&&s.n>0?{k:s.k,n:Math.floor(s.n)}:null):new Array(36).fill(null);
+ grid.e=d.grid&&isFinite(d.grid.e)?+d.grid.e:10;if(d.seed)seed=d.seed;autoMined=d.autoMined||0;wires=Array.isArray(d.wires)?d.wires.filter(w=>Array.isArray(w)&&w.length===2&&buildings[w[0]]&&buildings[w[1]]):[];tutorialStage=Number.isInteger(d.tutorialStage)?d.tutorialStage:2;rocketLaunched=!!d.rocketLaunched;rocketRepaired=!!d.rocketRepaired;
+ if(!buildings.some(b=>b.k==='shuttle'))buildings.push(normB({x:MAP*TS/2+55,y:MAP*TS/2+20,type:'Шаттл',k:'shuttle',hp:100}));
+ ensureTitanium();syncSlots();return true;}}catch(e){}return false;}
+
+/* ---------- UI-УТИЛИТЫ ---------- */
+function log(s,type=''){logs.unshift({s,type});logs=logs.slice(0,6);$('log').innerHTML=logs.map(x=>`<div class="${x.type}"><span class="t">ДЕНЬ ${day}</span>${x.s}</div>`).join('');}
+let toastT=0;function toast(s){$('toast').innerHTML=`<span>${s}</span>`;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),1800);}
+let advQ=[],advBusy=false;
+function adv(k){advQ.push(k);if(!advBusy)nextAdv();}
+function nextAdv(){const k=advQ.shift();if(!k){advBusy=false;return;}advBusy=true;const el=$('adv');el.innerHTML=`<img src="${ICONS[k].url}" alt=""><div><b>Новый предмет!</b><span>${nm(k)}</span></div>`;el.classList.add('show');setTimeout(()=>{el.classList.remove('show');setTimeout(nextAdv,350);},2600);}
+function showVictoryScreen(){const screen=$('victoryScreen');if(screen)requestAnimationFrame(()=>screen.classList.add('show'));}
+const run=()=>keys.has('ShiftLeft')||keys.has('ShiftRight');
+const panelOpen=()=>!$('panel').classList.contains('hidden');
+const sunF=()=>clamp(Math.sin((time-6)/12*Math.PI),0,1);
+
+function menu(){stopAmbient();paused=true;keys.clear();if(invOpen)closeInv();if(panelOpen())closePanel();paused=true;$('overlay').style.display='flex';$('card').innerHTML=`<h1>PARADOX:<br><span>MARS FRONTIER</span></h1><p>Ваша ракета потерпела аварию на Марсе. Соберите ресурсы, постройте жилой купол, восстановите энергосеть и подготовьте ракету к возвращению на Землю.</p><div class="menu"><button class="pri" id="startBtn">${running?'Продолжить':'Начать экспедицию'}</button><button id="settingsBtn">Настройки</button><button id="resetBtn">Новая игра</button><button id="exitBtn">Выход</button></div><p><b>Управление:</b> WASD / стрелки — движение · Shift — бег · E — взаимодействие · Q — сканер · I — инвентарь · B — строительство · T — технологии · Enter — автоматика · M — колония · Esc — меню.</p><p class="foot">Автосохранение включено. Игра работает локально, без обязательного подключения к интернету.</p>`;$('startBtn').onclick=continueGame;$('settingsBtn').onclick=settingsMenu;$('resetBtn').onclick=()=>{newGame();saveGame();menu();};$('exitBtn').onclick=exitGame;}
+function continueGame(){ $('overlay').style.display='none';paused=false;running=true;startAmbient();last=performance.now();if(tutorialStage<2)showTutorial(); }
+function settingsMenu(){stopAmbient();paused=true;$('overlay').style.display='flex';$('card').innerHTML=`<h2>Настройки</h2><div class="srow"><label for="musicVolume">Громкость музыки</label><input id="musicVolume" type="range" min="0" max="100" value="${audioPrefs.music}"><b id="musicValue">${audioPrefs.music}%</b></div><div class="srow"><label for="sfxVolume">Громкость эффектов</label><input id="sfxVolume" type="range" min="0" max="100" value="${audioPrefs.sfx}"><b id="sfxValue">${audioPrefs.sfx}%</b></div><div class="menu"><button class="pri" id="settingsContinue">Продолжить</button><button id="settingsBack">Назад в меню</button><button id="settingsExit">Выход</button></div><p class="foot">Громкость сохраняется на этом компьютере.</p>`;
+ $('musicVolume').oninput=e=>{audioPrefs.music=+e.target.value;$('musicValue').textContent=audioPrefs.music+'%';applyMusicVolume();saveAudioPrefs();};
+ $('sfxVolume').oninput=e=>{audioPrefs.sfx=+e.target.value;$('sfxValue').textContent=audioPrefs.sfx+'%';saveAudioPrefs();};
+ $('settingsContinue').onclick=continueGame;$('settingsBack').onclick=menu;$('settingsExit').onclick=exitGame;}
+function exitGame(){saveGame();stopAmbient();paused=true;keys.clear();$('overlay').style.display='flex';$('card').innerHTML=`<h2>Игра сохранена</h2><p>Прогресс сохранён. Теперь можно закрыть окно PARADOX: Mars Frontier.</p><div class="menu"><button class="pri" id="exitClose">Закрыть окно</button><button id="exitBack">Вернуться в меню</button></div>`;$('exitClose').onclick=()=>{window.close();$('card').innerHTML='<h2>Можно закрыть игру</h2><p>Браузер не разрешил закрыть это окно автоматически. Закройте его обычным способом.</p>';};$('exitBack').onclick=menu;}
+function showTutorial(){const el=$('tut');if(tutorialStage>=2){el.classList.add('hidden');return;}el.classList.remove('hidden');$('tutN').textContent=`ИНСТРУКТАЖ · ${tutorialStage+1}/2`;$('tutT').textContent=tutorialStage===0?'Аварийная посадка':'Постройте первое убежище';$('tutD').textContent=tutorialStage===0?'Это ваша ракета. Она повреждена, и сейчас вы не можете вернуться на Землю. Подберите обломки с поверхности клавишей E — затем постройте жилой купол через B.':'Откройте строительство клавишей B, выберите «Жилой купол» и разместите его рядом с ракетой. После установки инструктаж закончится.';}
+function finishTutorial(){tutorialStage=2;$('tut').classList.add('hidden');log('Инструктаж завершён. Теперь вы свободны: восстановите энергосеть и подготовьте ракету к возвращению на Землю.','ok');updateHud();}
+function newGame(){player={x:MAP*TS/2,y:MAP*TS/2,hp:100,o2:100,en:100,st:100,fd:100};res={iron:30,copper:18,ice:20,food:20,water:20,fuel:15,mats:12};credits=250;day=1;time=8;initWorld();buildings.push(normB({x:player.x+55,y:player.y+20,type:'Шаттл',k:'shuttle',hp:100}));discovered=new Set(Object.keys(res));upgrades={drill:0,scan:0};fx=[];invSel=null;held=null;inside=null;slots=new Array(36).fill(null);grid={e:10,cap:20,prod:0,use:0};autoMined=0;wires=[];wireStart=null;tutorialStage=0;rocketLaunched=false;rocketRepaired=false;buildMode=null;$('buildBar').classList.add('hidden');logs=[];syncSlots();log('Экспедиция началась. Вокруг шаттла разбросаны обломки — соберите их (E).','ok');updateHud();}
+function stat(id,v){const e=$(id);v=clamp(v,0,100);e.querySelector('em').textContent=Math.round(v);const b=e.querySelector('i b');b.style.width=v+'%';b.style.background=v<25?'#ff6363':v<50?'#ffc94a':'#62e08e';e.classList.toggle('low',v<20);}
+function updateHud(){syncSlots();stat('sHp',player.hp);stat('sO2',player.o2);stat('sFd',player.fd);stat('sEn',player.en);stat('sSt',player.st);
+ $('env').innerHTML=`МАРС · ${String(Math.floor(time)).padStart(2,'0')}:00 · ${sunF()>0?'день':'ночь'}<br>День <b>${day}</b> · Сеть <b>${Math.floor(grid.e)}/${grid.cap}</b> <span class="ok">+${grid.prod.toFixed(1)}</span> <span class="wa">−${grid.use.toFixed(1)}</span>`;
+ $('cr').innerHTML=`${Math.floor(credits)} <small>КРЕДИТЫ</small>`;$('res').innerHTML=HUD_KEYS.map(k=>`<div class="rc"><span>${SHORT[k]}</span><b>${have(k)}</b></div>`).join('');
+ const cnt=k=>buildings.filter(b=>b.k===k).length,work=buildings.filter(b=>b.pow).length;
+ $('veh').innerHTML=`<b>Снаряжение</b><br>Скафандр: <span class="${player.o2<25?'bad':'ok'}">${player.o2<25?'КРИТИЧЕСКИ':'исправен'}</span> · Баллонов O₂: ${have('o2tank')}<br>Бур: ${upgrades.drill?'Mk II':'Mk I'} · Сканер: ${upgrades.scan?'Mk II':'Mk I'} · ${run()?'бег':'шаг'}<br>Панели ${cnt('solar')} · Буры ${cnt('drill')} · Теплицы ${cnt('farm')} · работает ${work}`;
+ $('mis').innerHTML=`<div class="lbl">ГЛАВНАЯ ЦЕЛЬ</div>${tutorialStage<2?'<b>Инструктаж</b>Подберите обломок, затем постройте первый жилой купол.':rocketLaunched?'<b>Вы вернулись на Землю</b>Экспедиция завершена.':'<b>Починить ракету и вернуться на Землю</b>Соберите ресурсы для ремонта, подключите солнечную панель к шаттлу и бур к ракете. Добудьте 100 топлива и зарядите пусковую систему.'}`;
+ const sc=$('scanCd');if(sc)sc.style.width=(scanCd>0?scanCd/(upgrades.scan?5:8)*100:0)+'%';}
+function openPanel(title,html,w){paused=true;keys.clear();$('panel').classList.remove('hidden');$('pTitle').textContent=title;$('pTabs').innerHTML='';$('pBody').className='';$('pBody').innerHTML=html;openWin=w||null;$('prompt').innerHTML='';}
+function closePanel(){$('panel').classList.add('hidden');openWin=null;paused=$('overlay').style.display!=='none';last=performance.now();}
+function costText(cost){return Object.entries(cost).map(([k,v])=>`<span class="${have(k)>=v?'':'bad'}">${v} ${nm(k)}</span>`).join(' · ');}
+const affordable=c=>Object.entries(c).every(([k,v])=>have(k)>=v);
+const pay=c=>{Object.entries(c).forEach(([k,v])=>res[k]-=v);syncSlots();};
+function buildPanel(){if(inside){toast('Выйдите из купола, чтобы строить');return;}openPanel('СТРОИТЕЛЬСТВО',`<p>Выберите объект, затем щёлкните по свободному месту на карте. Ресурсы списываются при установке. ПКМ или Esc — отмена. B — закрыть.</p><div class="grid"><div class="cell"><b>Медный провод</b><p>Соединяет солнечные панели, жилой купол, бур и ракету. Сначала выберите первый объект, затем второй.</p><p>Цена: 1 медная проволока за соединение</p><button data-wire>Прокладывать провод</button></div>${Object.entries(BUILD_DEFS).map(([id,b])=>`<div class="cell"><b><img src="${ICONS['B_'+id].url}" alt="" style="width:24px;height:24px;image-rendering:pixelated;vertical-align:middle;margin-right:6px">${b.n}</b><p>${b.d}</p><p>Цена: ${costText(b.cost)}</p><button data-build="${id}">Выбрать</button></div>`).join('')}</div>`,'build');const wb=document.querySelector('[data-wire]');if(wb)wb.onclick=()=>{if(have('cwire')<1){toast('Нужна медная проволока');return;}buildMode='wire';wireStart=null;closePanel();$('buildBar').innerHTML='Провод: щёлкните по первому объекту, затем по второму · ПКМ отмена';$('buildBar').classList.remove('hidden');};document.querySelectorAll('[data-build]').forEach(b=>b.onclick=()=>{let t=b.dataset.build;if(!affordable(BUILD_DEFS[t].cost)){toast('Недостаточно ресурсов');return;}buildMode=t;closePanel();$('buildBar').innerHTML=`Размещение: <b>${BUILD_DEFS[t].n}</b> — ЛКМ поставить · ПКМ / Esc отмена`;$('buildBar').classList.remove('hidden');});}
+function cancelBuild(){wireStart=null;buildMode=null;$('buildBar').classList.add('hidden');toast('Строительство отменено');}
+function techPanel(){openPanel('ТЕХНОЛОГИИ',`<p class="mu">Улучшения создаются в инвентаре (I) из руды и переработанного мусора. T — закрыть.</p>${RECIPES.filter(r=>r.up).map(r=>`<div class="row2"><span><b>${r.t}</b> — ${r.d}<br><span class="mu">${costText(r.in)}</span></span><span class="chip ${upgrades[r.up]?'t':'f'}">${upgrades[r.up]?'установлено':'не изучено'}</span></div>`).join('')}`,'tech');}
+function colonyPanel(){const c=k=>buildings.filter(b=>b.k===k).length;openPanel('КОЛОНИЯ',`<p>День ${day}. Построек: ${buildings.length} (куполов ${c('hab')}, панелей ${c('solar')}, буров ${c('drill')}, теплиц ${c('farm')}). Модулей в куполах: ${buildings.reduce((a,b)=>a+(b.mods?b.mods.filter(Boolean).length:0),0)}.</p><p>Исследовано сигналов: ${nodes.filter(n=>n.seen).length}. Найдено видов предметов: ${discovered.size} из ${ITEM_ORDER.length}. Добыто автоматикой: ${autoMined}.</p><p class="mu">M — закрыть.</p>`,'colony');}
+
+/* ---------- ЭНЕРГОСЕТЬ И АВТОМАТИКА ---------- */
+function nodeFor(b){let n=nodes[b.ni];if(n&&n.amount>0&&dist(n.x,n.y,b.x,b.y)<=260)return n;b.ni=-1;let best=261;for(let i=0;i<nodes.length;i++){const m=nodes[i];if(m.amount<=0)continue;const d=dist(m.x,m.y,b.x,b.y);if(d<best){best=d;b.ni=i;}}return b.ni>=0?nodes[b.ni]:null;}
+function produce(o,k){if(k==='drill'){playSfx('mining');const n=nodeFor(o);if(!n)return;const got=Math.min(n.k==='oil'?5:3,n.amount);n.amount-=got;n.seen=true;if(n.k==='oil'){if(connectedToShuttle(o)){addItem('fuel',got*2,o.x,o.y);log(`Бур подал ${got*2} ед. топлива в ракетный контур.`,'ok');}else{addItem('oil',got,o.x,o.y);log('Добыта нефть. Соедините бур с ракетой медным проводом для перекачки топлива.','wa');}}else addItem(n.k,got,o.x,o.y);autoMined+=got;if(n.amount<=0)log(`Буровая: пласт исчерпан (${n.k==='oil'?'нефть':nm(n.k)})`,'wa');}
+ else if(k==='farm'){res.water-=1;addItem('food',2,o.x,o.y);}
+ else if(k==='tree'){res.water-=1;addItem('apple',3);}
+ else if(k==='o2gen'){res.ice-=1;addItem('o2tank',1);}}
+function connected(a,b){if(a===b)return true;const seen=new Set([a]),q=[a];while(q.length){const n=q.shift();for(const w of wires){const z=w[0]===n?w[1]:w[1]===n?w[0]:-1;if(z<0||seen.has(z))continue;if(z===b)return true;seen.add(z);q.push(z);}}return false;}
+function buildingIndex(o){return buildings.indexOf(o);}
+function hasSolarPower(o){const i=buildingIndex(o);if(i<0)return false;return buildings.some((b,j)=>b.k==='solar'&&b.on!==false&&connected(i,j));}
+function connectedToShuttle(o){const i=buildingIndex(o),j=buildings.findIndex(b=>b.k==='shuttle');return i>=0&&j>=0&&connected(i,j);}
+function automation(dt){const sun=sunF();let prod=0,solars=0;
+ for(const b of buildings){if(b.k==='solar'){solars++;const p=b.on?2*sun:0;prod+=p;b.pow=p>0;b.st=!b.on?'выключено':p>0?`выработка +${p.toFixed(1)} эн./с`:'ночь — нет выработки';}else if(b.k==='shuttle'){b.st='ожидает подключения солнечной сети';}else if(b.k==='hab'){b.st=`модулей: ${b.mods.filter(Boolean).length}/6`;}}
+ grid.cap=20+solars*40;grid.prod=prod;grid.e=Math.min(grid.cap,grid.e+prod*dt);
+ const cons=[];for(const b of buildings)if(b.k==='hab'&&hasSolarPower(b))b.mods.forEach(m=>{if(m)cons.push([m,MODS[m.k].pw,m.k,b]);});
+ for(const b of buildings)if(b.k==='farm'&&hasSolarPower(b))cons.push([b,PWR.farm,'farm',b]);
+ for(const b of buildings)if(b.k==='drill'&&hasSolarPower(b))cons.push([b,PWR.drill,'drill',b]);
+ let used=0;
+ for(const [o,pw,k,source] of cons){o.pow=false;if(!o.on){o.st='выключено';continue;}
+  let why='';if(!hasSolarPower(source))why='нет кабеля к солнечной сети';else if(k==='drill'&&!nodeFor(o))why='нет подземного пласта в радиусе 260';else if((k==='farm'||k==='tree')&&have('water')<1)why='нет воды';else if(k==='o2gen'&&have('ice')<1)why='нет льда';
+  if(why){o.st=why;continue;}
+  const need=pw*dt;if(grid.e<need){o.st='нет энергии';continue;}
+  grid.e-=need;used+=pw;o.pow=true;o.t=(o.t||0)+dt;o.st=`работает · ${Math.max(0,Math.ceil(PERIOD[k]-o.t))} с до цикла`;
+  if(o.t>=PERIOD[k]){o.t-=PERIOD[k];produce(o,k);}}
+ const shuttle=buildings.find(b=>b.k==='shuttle');if(shuttle&&hasSolarPower(shuttle)&&grid.e>0&&rocketRepaired){const charge=Math.min(grid.e,dt*.35);grid.e-=charge;shuttle.charge=Math.min(100,(shuttle.charge||0)+charge);used+=charge/Math.max(dt,.001);shuttle.st=`заряд ${Math.floor(shuttle.charge||0)}%`;}
+ grid.use=used;}
+function autoPanel(){const row=(name,ic,o,pw,id)=>`<tr><td><img src="${ICONS['B_'+ic].url}" alt="" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;margin-right:6px">${name}</td><td class="${o.on===false?'mu':o.pow?'ok':'wa'}">${o.st||'—'}</td><td>${pw}</td><td><button data-tog="${id}">${o.on===false?'Включить':'Выключить'}</button></td></tr>`;
+ let rows='';buildings.forEach((b,i)=>{if(b.k==='hab')b.mods.forEach((m,j)=>{if(m)rows+=row(`${MODS[m.k].n} <span class="mu">(купол)</span>`,m.k,m,`−${MODS[m.k].pw}`,`m:${i}:${j}`);});});
+ buildings.forEach((b,i)=>{if(b.k==='farm')rows+=row('Теплица','farm',b,`−${PWR.farm}`,`b:${i}`);});
+ buildings.forEach((b,i)=>{if(b.k==='drill')rows+=row('Буровая установка','drill',b,`−${PWR.drill}`,`b:${i}`);});
+ buildings.forEach((b,i)=>{if(b.k==='solar')rows+=row('Солнечная панель','solar',b,`+${(2*sunF()).toFixed(1)}`,`b:${i}`);});
+ openPanel('АВТОМАТИКА',`<p>Энергосеть: <b>${Math.floor(grid.e)}/${grid.cap}</b> эн. · выработка <span class="ok">+${grid.prod.toFixed(1)}</span>/с · потребление <span class="wa">−${grid.use.toFixed(1)}</span>/с · сейчас ${sunF()>0?'день':'ночь'}</p><p class="mu">Приоритет питания: модули купола → теплицы → буры. При нехватке энергии объекты в конце очереди останавливаются. Enter — закрыть.</p>${rows?`<table><tr><th>Объект</th><th>Состояние</th><th>Эн./с</th><th></th></tr>${rows}</table>`:'<p class="empty">Автоматических объектов пока нет. Постройте солнечную панель и буровую установку (B).</p>'}<p class="mu">Добыто автоматикой за всё время: ${autoMined}</p>`,'auto');
+ document.querySelectorAll('[data-tog]').forEach(btn=>btn.onclick=()=>{const p=btn.dataset.tog.split(':');const o=p[0]==='b'?buildings[+p[1]]:buildings[+p[1]].mods[+p[2]];o.on=!o.on;o.st=o.on?'включено':'выключено';o.pow=false;log(`${o.on?'Включено':'Выключено'}: ${o.k&&MODS[o.k]?MODS[o.k].n:o.type}`,'auto');autoPanel();});}
+
+/* ---------- ЖИЛОЙ КУПОЛ (интерьер) ---------- */
+const PADS=[[420,330],[640,330],[860,330],[420,470],[640,470],[860,470]],DOOR={x:640,y:600};
+function enterHab(b){playSfx('domeEnter');inside=b;room={x:640,y:560};near=null;log('Вы вошли в жилой купол. Кислород скафандра здесь не расходуется.','ok');updateHud();}
+function exitHab(){player.x=clamp(inside.x,TS,MAP*TS-TS);player.y=clamp(inside.y+50,TS,MAP*TS-TS);inside=null;near=null;log('Вы вышли из купола.');updateHud();}
+function roomNear(){let best=70,r=null;PADS.forEach((p,i)=>{const d=dist(p[0],p[1]+20,room.x,room.y);if(d<best){best=d;r={t:'pad',i};}});if(dist(DOOR.x,DOOR.y,room.x,room.y)<60)r={t:'door'};return r;}
+function modPanel(i){const b=inside,m=b.mods[i];
+ if(m){const d=MODS[m.k];openPanel(d.n.toUpperCase(),`<div class="row2"><span><img src="${ICONS['B_'+m.k].url}" alt="" style="width:40px;height:40px;image-rendering:pixelated;float:left;margin-right:10px">${d.d}<br>Состояние: <b>${m.st||'—'}</b> · потребление ${d.pw} эн./с</span><button data-mt>${m.on?'Выключить':'Включить'}</button></div>`,'mod');document.querySelector('[data-mt]').onclick=()=>{m.on=!m.on;m.pow=false;m.st=m.on?'включено':'выключено';modPanel(i);};return;}
+ openPanel(`ПЛОЩАДКА ${i+1}`,`<p>Выберите модуль для установки. Модуль питается от общей энергосети.</p><div class="grid">${Object.entries(MODS).map(([id,d])=>`<div class="cell"><b><img src="${ICONS['B_'+id].url}" alt="" style="width:24px;height:24px;image-rendering:pixelated;vertical-align:middle;margin-right:6px">${d.n}</b><p>${d.d}</p><p>Цена: ${costText(d.cost)} · ${d.pw} эн./с</p><button data-mod="${id}">Установить</button></div>`).join('')}</div>`,'mod');
+ document.querySelectorAll('[data-mod]').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.mod;if(!affordable(MODS[id].cost)){toast('Недостаточно ресурсов');return;}pay(MODS[id].cost);playSfx('construction');b.mods[i]={k:id,on:true,t:0,st:'',pow:false};log(`Установлен модуль: ${MODS[id].n}`,'ok');toast(`${MODS[id].n} установлен`);closePanel();updateHud();});}
+
+/* ---------- СБОР И ДОБЫЧА ---------- */
+function addItem(k,n,x,y){res[k]=(res[k]||0)+n;if(x!==undefined&&!inside)fx.push({x,y:y-14,s:`+${n} ${nm(k)}`,t:1.3});if(!discovered.has(k)){discovered.add(k);adv(k);}syncSlots();if(invOpen)renderInv();}
+function findNear(){const pr=$('prompt');
+ if(inside){near=roomNear();if(!near||paused){pr.innerHTML='';return;}const m=near.t==='pad'?inside.mods[near.i]:null;pr.innerHTML=`<span><kbd>E</kbd> ${near.t==='door'?'Выйти из купола':m?`${MODS[m.k].n} · ${m.st||'—'}`:`Площадка ${near.i+1}: установить модуль`}</span>`;return;}
+ near=null;let best=60;for(const it of items){const d=dist(it.x,it.y,player.x,player.y);if(d<best){best=d;near={t:'item',o:it};}}
+ if(!near){best=75;for(const n of nodes){if(n.amount<=0||!n.seen)continue;const d=dist(n.x,n.y,player.x,player.y);if(d<best){best=d;near={t:'node',o:n};}}}
+ if(!near){best=80;for(const b of buildings){const d=dist(b.x,b.y,player.x,player.y);if(d<best){best=d;near={t:'bld',o:b};}}}
+ if(!near||paused){pr.innerHTML='';return;}
+ const o=near.o,txt=near.t==='item'?`Подобрать: ${nm(o.k)}${o.n>1?' ×'+o.n:''}`:near.t==='node'?`Добыть: ${nm(o.k)} · осталось ${o.amount}`:o.k==='hab'?'Войти в жилой купол':`${o.type} · ${o.st||'исправен'}`;
+ pr.innerHTML=`<span><kbd>E</kbd> ${txt}</span>`;}
+function pickup(it){items.splice(items.indexOf(it),1);if(tutorialStage===0){tutorialStage=1;setTimeout(showTutorial,250);}
+ if(it.k==='crate'){const pool=[['food',2,4],['water',2,3],['plastic',1,2],['oldbat',1,1],['ebits',1,2],['cable',1,2],['o2tank',1,1]];const got=[],cnt=randInt(2,3);for(let i=0;i<cnt;i++){const p=pool[Math.floor(Math.random()*pool.length)],n=randInt(p[1],p[2]);addItem(p[0],n,it.x,it.y-i*16);got.push(`${n} ${nm(p[0])}`);}log(`Ящик снабжения: ${got.join(', ')}`,'ok');}
+ else{addItem(it.k,it.n,it.x,it.y);log(`Подобрано: ${nm(it.k)}${it.n>1?' ×'+it.n:''}`,'ok');}
+ findNear();updateHud();}
+function mine(n){playSfx('mining');const got=Math.min(3+upgrades.drill*2,n.amount);n.amount-=got;player.st=Math.max(0,player.st-2);addItem(n.k,got,n.x,n.y);log(`Добыто: ${got} ${nm(n.k)}`,'ok');if(n.amount<=0)log(`Месторождение исчерпано: ${nm(n.k)}`,'wa');findNear();updateHud();}
+function rocketPanel(){const sh=buildings.find(b=>b.k==='shuttle');if(!sh)return;const charge=Math.floor(sh.charge||0),repairCost={iron:35,copper:25,titanium:8,circuit:4};openPanel('АВАРИЙНЫЙ ШАТТЛ',`<p>Это ваша ракета. Корпус и системы повреждены после аварийной посадки.</p><div class="row2"><span>Ремонт корпуса и двигателя</span><b>${rocketRepaired?'Выполнен':'Не выполнен'}</b></div><div class="row2"><span>Топливо в запасе</span><b>${have('fuel')} / 100</b></div><div class="row2"><span>Заряд пусковой системы</span><b>${charge} / 100%</b></div><p class="mu">Для ремонта: ${costText(repairCost)}. Для зарядки соедините шаттл с солнечной панелью медным проводом. Бур должен быть соединён с шаттлом, чтобы перекачивать добытое топливо.</p><div class="menu"><button data-repair ${rocketRepaired||!affordable(repairCost)?'disabled':''}>${rocketRepaired?'Ракета отремонтирована':'Отремонтировать ракету'}</button><button class="pri" data-launch ${!rocketRepaired||have('fuel')<100||charge<100?'disabled':''}>Запустить ракету · Земля</button></div>`,'rocket');const rb=document.querySelector('[data-repair]');if(rb)rb.onclick=()=>{if(rocketRepaired||!affordable(repairCost))return;pay(repairCost);rocketRepaired=true;sh.charge=sh.charge||0;log('Ракета отремонтирована. Осталось заправить её и зарядить пусковую систему.','ok');rocketPanel();};const lb=document.querySelector('[data-launch]');if(lb)lb.onclick=()=>{if(!rocketRepaired||have('fuel')<100||(sh.charge||0)<100)return;res.fuel-=100;rocketLaunched=true;stopAmbient();paused=true;log('Запуск успешен. Вы покинули Марс и возвращаетесь на Землю!','ok');closePanel();$('banner').innerHTML='МИССИЯ ВЫПОЛНЕНА<small>Ракета покинула Марс. Вы возвращаетесь домой.</small>';$('banner').classList.add('show');showVictoryScreen();updateHud();saveGame();};}
+function interact(){findNear();
+ if(inside){if(!near){toast('Подойдите к площадке или к двери');return;}if(near.t==='door')exitHab();else modPanel(near.i);return;}
+ if(!near){toast('Рядом нет доступных объектов');return;}if(near.t==='item')pickup(near.o);else if(near.t==='node')mine(near.o);else if(near.o.k==='hab')enterHab(near.o);else if(near.o.k==='shuttle')rocketPanel();else toast(`${near.o.type}: ${near.o.st||'объект функционирует'}`);}
+function scan(){if(inside){toast('Сканер не работает внутри купола');return;}if(scanCd>0){toast('Сканер перезаряжается');return;}playSfx('scanner');scanCd=upgrades.scan?5:8;const R=upgrades.scan?700:420;let c=0;nodes.forEach(n=>{if(!n.seen&&n.amount>0&&dist(n.x,n.y,player.x,player.y)<R){n.seen=true;c++;}});log(`Сканирование: найдено новых месторождений — ${c}.`,'auto');toast('Сканирование завершено');}
+function revealNear(){if(inside)return;for(const n of nodes)if(!n.seen&&dist(n.x,n.y,player.x,player.y)<200)n.seen=true;}
+function respawn(){const sh=buildings.find(b=>b.k==='shuttle');inside=null;held=null;player.x=sh?sh.x-50:MAP*TS/2;player.y=sh?sh.y+10:MAP*TS/2;player.hp=60;player.o2=Math.max(player.o2,60);player.fd=Math.max(player.fd,40);player.st=100;log('Вы потеряли сознание и очнулись у шаттла. Здоровье 60%.','bad');toast('Возрождение у шаттла · здоровье 60%');updateHud();}
+
+/* ---------- ИНВЕНТАРЬ: ЯЧЕЙКИ, ПЕРЕТАСКИВАНИЕ, ВЫБРОС ---------- */
+function renderQuickbar(){const el=$('quickbar');if(!el)return;el.innerHTML=Array.from({length:9},(_,i)=>{const q=slots[i];return `<button class="${i===quickIndex?'sel':''}" data-q="${i}" title="${q?nm(q.k):'Пустой слот'}"><kbd>${i+1}</kbd>${q?`<img src="${ICONS[q.k].url}" alt=""><b>${q.n>1?q.n:''}</b>`:''}</button>`;}).join('');}
+function selectQuick(i){quickIndex=clamp(i,0,8);renderQuickbar();}
+function useQuick(){const q=slots[quickIndex];if(!q){toast('Выбранный слот пуст');return;}if(USE[q.k]){useItem(q.k);return;}if(q.k==='hab'||q.k==='solar'||q.k==='drill'||q.k==='farm'){toast('Для установки откройте строительство клавишей B');return;}toast(`${nm(q.k)} нельзя использовать напрямую`);}
+function syncSlots(){const cnt={};for(const s of slots)if(s)cnt[s.k]=(cnt[s.k]||0)+s.n;if(held)cnt[held.k]=(cnt[held.k]||0)+held.n;
+ for(const k in cnt){let ex=cnt[k]-have(k);if(ex<=0)continue;cnt[k]-=ex;
+  for(let i=35;i>=0&&ex>0;i--){const s=slots[i];if(s&&s.k===k){const t=Math.min(ex,s.n);s.n-=t;ex-=t;if(!s.n)slots[i]=null;}}
+  if(ex>0&&held&&held.k===k){held.n-=ex;if(held.n<=0)held=null;}}
+ overflow=0;
+ for(const k of ITEM_ORDER){let need=have(k)-(cnt[k]||0);if(need<=0)continue;
+  for(const s of slots)if(need>0&&s&&s.k===k&&s.n<STACK){const t=Math.min(need,STACK-s.n);s.n+=t;need-=t;}
+  for(let i=0;i<36&&need>0;i++)if(!slots[i]){const t=Math.min(need,STACK);slots[i]={k,n:t};need-=t;}
+  overflow+=need;}renderQuickbar();}
+function slotHtml(i){const s=slots[i];return `<div class="slot${s&&invSel===s.k?' sel':''}" data-i="${i}"${s?` data-k="${s.k}"`:''}>${s?`<img src="${ICONS[s.k].url}" alt="">${s.n>1?`<b>${s.n}</b>`:''}`:''}</div>`;}
+function canCraft(r){if(r.up&&upgrades[r.up])return false;return Object.entries(r.in).every(([k,v])=>have(k)>=v);}
+function rTitle(r){if(r.t)return r.t;const [k,v]=Object.entries(r.out)[0];return nm(k)+(v>1?' ×'+v:'');}
+function renderInv(){syncSlots();
+ const old=document.querySelector('#inv .clist'),sc=old?old.scrollTop:0;
+ const range=(a,b)=>{let h='';for(let i=a;i<b;i++)h+=slotHtml(i);return h;};
+ const list=RECIPES.filter(r=>invFilter==='all'||canCraft(r));
+ const rec=list.length?list.map(r=>{const ok=canCraft(r),done=r.up&&upgrades[r.up],ik=r.up?r.icon:Object.keys(r.out)[0];
+  const ing=Object.entries(r.in).map(([k,v])=>`<span class="ing${have(k)<v?' lack':''}" data-tk="${k}"><img src="${ICONS[k].url}" alt="">${have(k)}/${v}</span>`).join('');
+  const outs=r.up?`<em>${r.d}</em>`:Object.keys(r.out).length>1?`<em>→ ${Object.entries(r.out).map(([k,v])=>v+' '+nm(k)).join(', ')}</em>`:'';
+  return `<div class="rcp${ok?'':' no'}"><div class="slot sm" data-tk="${ik}"><img src="${ICONS[ik].url}" alt=""></div><div class="rn"><b>${rTitle(r)}</b>${outs}<div>${ing}</div></div><button data-craft="${r.id}" ${ok?'':'disabled'}>${done?'Готово':'Создать'}</button></div>`;}).join(''):'<p class="empty">Из текущих запасов ничего не скрафтить. Соберите больше обломков и руды.</p>';
+ const sel=invSel&&have(invSel)>0?invSel:null;
+ const det=sel?`<div class="dh"><img src="${ICONS[sel].url}" alt=""><div><b>${nm(sel)}</b><span>Всего: ${have(sel)}</span></div></div><p>${ITEMS[sel].d}</p>${USE[sel]?`<button data-use="${sel}">Использовать · ${USE[sel].t}</button>`:''}`:'<p class="empty">Возьмите предмет мышью, чтобы увидеть описание. Расходники (еда, баллоны, аптечки, батареи) используются отсюда.</p>';
+ $('inv').innerHTML=`<div class="ih">Инвентарь<span>Найдено видов: ${discovered.size}/${ITEM_ORDER.length}<button id="invClose">Закрыть · I</button></span></div>
+ <div class="itop"><div class="pv"><canvas id="pvc" width="140" height="176"></canvas><div class="pst">HP ${Math.round(player.hp)} · O₂ ${Math.round(player.o2)}<br>ЕДА ${Math.round(player.fd)} · EN ${Math.round(player.en)}</div></div>
+ <div class="craft"><div class="ctabs"><span>Крафт</span><button data-filter="all" class="${invFilter==='all'?'on':''}">Все</button><button data-filter="ok" class="${invFilter==='ok'?'on':''}">Доступно</button></div><div class="clist">${rec}</div></div></div>
+ <div class="ibot"><div><div class="sgrid">${range(9,36)}</div><div class="sgrid hotrow">${range(0,9)}</div>${overflow?`<div class="xtra">+${overflow} шт. не поместилось — освободите ячейки</div>`:''}<div class="ihint">ЛКМ — взять / положить · ПКМ — взять половину / положить 1 · Shift+ЛКМ — переложить в другой ряд · отпустите предмет за окном — выбросить</div></div><div class="det">${det}</div></div>`;
+ const nl=document.querySelector('#inv .clist');if(nl)nl.scrollTop=sc;}
+function openInv(){if(!running)return;invOpen=true;paused=true;keys.clear();openWin='inv';$('prompt').innerHTML='';renderInv();$('inv').classList.remove('hidden');}
+function closeInv(){held=null;dragFrom=-1;syncSlots();updDrag();invOpen=false;if(openWin==='inv')openWin=null;$('inv').classList.add('hidden');$('tip').classList.add('hidden');paused=$('overlay').style.display!=='none'||panelOpen();last=performance.now();}
+function craft(id){const r=RECIPES.find(x=>x.id===id);if(!r||!canCraft(r)){toast('Не хватает ресурсов');return;}playSfx('notification');pay(r.in);if(r.up){upgrades[r.up]=1;log(`Установлено улучшение: ${r.t}`,'auto');toast(`${r.t} установлен`);}else{Object.entries(r.out).forEach(([k,v])=>addItem(k,v));log(`Создано: ${rTitle(r)}`,'ok');}renderInv();updateHud();}
+function useItem(k){const u=USE[k];if(!u||have(k)<1)return;if(!u.ok()){toast('Сейчас это не нужно — показатель уже полный');return;}u.a();res[k]-=1;log(`Использовано: ${nm(k)}`,'ok');if(have(k)<1)invSel=null;renderInv();updateHud();updDrag();}
+function drawPreview(){const pc=$('pvc');if(!pc)return;const g=pc.getContext('2d');g.fillStyle='#0d0a0c';g.fillRect(0,0,140,176);g.fillStyle='#3a2018';g.fillRect(0,160,140,16);g.fillStyle='rgba(0,0,0,.4)';g.beginPath();g.ellipse(70,161,30,5,0,0,Math.PI*2);g.fill();drawHero(g,70,160,7,1,0,false,gt);}
+let dragFrom=-1,dragMoved=false,mouseX=0,mouseY=0;
+function slotAt(x,y){const el=document.elementFromPoint(x,y),s=el&&el.closest?el.closest('#inv [data-i]'):null;return s?+s.dataset.i:-1;}
+function inInv(x,y){const el=document.elementFromPoint(x,y);return !!(el&&el.closest&&el.closest('#inv'));}
+function placeHeld(i){const s=slots[i];if(!s){slots[i]=held;held=null;}else if(s.k===held.k){const t=Math.min(STACK-s.n,held.n);s.n+=t;held.n-=t;if(held.n<=0)held=null;}else{slots[i]=held;held=s;}}
+function quickMove(i){const s=slots[i],r=i<9?[9,36]:[0,9];slots[i]=null;for(let j=r[0];j<r[1]&&s.n>0;j++){const d=slots[j];if(d&&d.k===s.k&&d.n<STACK){const t=Math.min(STACK-d.n,s.n);d.n+=t;s.n-=t;}}for(let j=r[0];j<r[1]&&s.n>0;j++)if(!slots[j]){slots[j]={k:s.k,n:s.n};s.n=0;}if(s.n>0)slots[i]=s;}
+function slotClick(i,btn,shift){const s=slots[i];
+ if(!held){if(!s)return;invSel=s.k;
+  if(shift&&btn===0){quickMove(i);}
+  else if(btn===2&&s.n>1){const t=Math.ceil(s.n/2);held={k:s.k,n:t};s.n-=t;dragFrom=i;}
+  else{held=s;slots[i]=null;dragFrom=i;}}
+ else if(btn===2){if(!s){slots[i]={k:held.k,n:1};held.n--;}else if(s.k===held.k&&s.n<STACK){s.n++;held.n--;}if(held.n<=0)held=null;}
+ else placeHeld(i);
+ renderInv();updDrag();}
+function dropHeld(){if(!held)return;const {k,n}=held;held=null;res[k]=Math.max(0,(res[k]||0)-n);const bx=inside?inside.x:player.x+hero.face*34,by=inside?inside.y+40:player.y+rand(-8,8);items.push({x:clamp(bx,TS,MAP*TS-TS),y:clamp(by,TS,MAP*TS-TS),k,n,id:Math.random()*100});log(`Выброшено: ${nm(k)}${n>1?' ×'+n:''}`,'wa');toast(`Выброшено: ${nm(k)} ×${n}`);if(have(k)<1&&invSel===k)invSel=null;syncSlots();renderInv();updDrag();updateHud();}
+function updDrag(){const d=$('drag');if(!held||!invOpen){d.classList.add('hidden');return;}d.innerHTML=`<img src="${ICONS[held.k].url}" alt="">${held.n>1?`<b>${held.n}</b>`:''}<span>Выбросить</span>`;d.classList.remove('hidden');posDrag();}
+function posDrag(){const d=$('drag'),r=$('stage').getBoundingClientRect(),s=r.width/W;d.style.left=((mouseX-r.left)/s-20)+'px';d.style.top=((mouseY-r.top)/s-20)+'px';d.classList.toggle('out',!inInv(mouseX,mouseY));}
+
+/* ---------- ОТРИСОВКА ---------- */
+// Статический каменистый грунт кэшируется чанками. Это убирает тысячи
+// beginPath/arc/fill/stroke операций из каждого кадра.
+const TERRAIN_CHUNK_TILES=8, TERRAIN_CHUNK_PX=TERRAIN_CHUNK_TILES*TS;
+const terrainCache=new Map(), TERRAIN_CACHE_LIMIT=36;
+function terrainChunk(cx,cy){
+ const key=cx+','+cy;
+ let c=terrainCache.get(key);
+ if(c){terrainCache.delete(key);terrainCache.set(key,c);return c;}
+ const pad=48, size=TERRAIN_CHUNK_PX+pad*2;
+ c=document.createElement('canvas');c.width=size;c.height=size;
+ const g=c.getContext('2d');
+ g.fillStyle='#a45a3e';g.fillRect(0,0,size,size);
+ const wx0=cx*TERRAIN_CHUNK_PX-pad, wy0=cy*TERRAIN_CHUNK_PX-pad;
+ const tx0=Math.floor(wx0/TS), tx1=Math.ceil((wx0+size)/TS);
+ const ty0=Math.floor(wy0/TS), ty1=Math.ceil((wy0+size)/TS);
+ const fills=['rgba(52,25,19,.30)','rgba(228,143,99,.24)','rgba(72,36,27,.20)','rgba(194,105,70,.25)'];
+ g.lineWidth=1;
+ for(let ty=ty0;ty<ty1;ty++)for(let tx=tx0;tx<tx1;tx++){
+  if(tx<0||ty<0||tx>=MAP||ty>=MAP)continue;
+  const seed0=(tx*73856093^ty*19349663)>>>0;
+  for(let r=0;r<5;r++){
+   const q=(seed0+r*83492791)>>>0;
+   const x=tx*TS-wx0+((q>>>2)%48)-4, y=ty*TS-wy0+((q>>>8)%48)-4;
+   const rad=4+((q>>>14)%9), stretch=.55+((q>>>20)%70)/100, rot=((q>>>5)%100)/100;
+   g.beginPath();
+   for(let j=0;j<8;j++){
+    const a=rot+j*Math.PI/4,rr=rad*(.72+(((q>>>(j%5))&7)/20));
+    const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr*stretch;
+    if(j===0)g.moveTo(px,py);else g.lineTo(px,py);
+   }
+   g.closePath();g.fillStyle=fills[r%4];g.fill();
+   g.strokeStyle='rgba(48,22,17,.18)';g.stroke();
+  }
+ }
+ terrainCache.set(key,c);
+ if(terrainCache.size>TERRAIN_CACHE_LIMIT)terrainCache.delete(terrainCache.keys().next().value);
+ return c;
+}
+function drawWorld(){
+ const sx=player.x-W/2,sy=player.y-H/2;camera.x=sx;camera.y=sy;
+ ctx.fillStyle='#a45a3e';ctx.fillRect(0,0,W,H);
+ const cpx=TERRAIN_CHUNK_PX,pad=48;
+ const x0=Math.max(0,Math.floor(sx/cpx)),x1=Math.min(Math.ceil(MAP/TERRAIN_CHUNK_TILES),Math.ceil((sx+W)/cpx));
+ const y0=Math.max(0,Math.floor(sy/cpx)),y1=Math.min(Math.ceil(MAP/TERRAIN_CHUNK_TILES),Math.ceil((sy+H)/cpx));
+ for(let cy=y0;cy<y1;cy++)for(let cx=x0;cx<x1;cx++){
+  const chunk=terrainChunk(cx,cy);
+  ctx.drawImage(chunk,cx*cpx-pad-sx,cy*cpx-pad-sy);
+ }
+ for(let n of nodes)if(n.seen&&n.amount>0){let x=n.x-sx,y=n.y-sy;if(x<-30||x>W+30||y<-30||y>H+30)continue;const r=8+Math.min(7,n.amount/3);ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(x,y+r*.6,r*1.15,r*.45,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#5a3a2e';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6e4a3b';ctx.beginPath();ctx.arc(x-r*.25,y-r*.3,r*.6,0,Math.PI*2);ctx.fill();ctx.fillStyle=ORE_COL[n.k]||'#fff';ctx.fillRect(x-r*.5,y-r*.2,4,4);ctx.fillRect(x+r*.2,y+r*.1,4,3);ctx.fillRect(x-1,y-r*.6,3,3);if(n.k==='titanium'&&Math.sin(gt*4+n.x)>.8){ctx.fillStyle='#fff';ctx.fillRect(x+r*.3,y-r*.5,2,2);}}
+ for(const it of items){let x=it.x-sx,y=it.y-sy;if(x<-20||x>W+20||y<-20||y>H+20)continue;const bob=Math.sin(gt*3+it.id)*2;ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+9,8,3,0,0,Math.PI*2);ctx.fill();ctx.drawImage(ICONS[it.k].c,Math.round(x-10),Math.round(y-12+bob),20,20);if(it.n>1){ctx.font='bold 10px Arial';ctx.fillStyle='#fff';ctx.fillText(it.n,Math.round(x+6),Math.round(y+8));}if((gt+it.id)%3<.18){ctx.fillStyle='#fff';ctx.fillRect(Math.round(x+5),Math.round(y-12+bob),2,2);}}
+ for(const hab of buildings){if(hab.k!=='hab'||!hab.mods||!hab.mods.some(m=>m&&m.k==='o2gen'&&m.pow))continue;ctx.fillStyle='rgba(80,190,220,.10)';ctx.strokeStyle='rgba(127,216,255,.45)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(hab.x-sx,hab.y-sy,240,0,Math.PI*2);ctx.fill();ctx.stroke();}
+ for(const w of wires){const a=buildings[w[0]],b=buildings[w[1]];if(!a||!b)continue;ctx.strokeStyle='#a85c2b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(a.x-sx,a.y-sy);ctx.lineTo(b.x-sx,b.y-sy);ctx.stroke();ctx.strokeStyle='#f3b66d';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x-sx,a.y-sy-1);ctx.lineTo(b.x-sx,b.y-sy-1);ctx.stroke();}
+ for(let b of buildings){let x=b.x-sx,y=b.y-sy;if(x<-90||x>W+90||y<-90||y>H+90)continue;ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(x,y+16,26,7,0,0,Math.PI*2);ctx.fill();
+  if(b.k==='shuttle'){ctx.fillStyle='#aaa3a0';ctx.fillRect(x-20,y-22,40,36);ctx.fillStyle='#d9d3cf';ctx.fillRect(x-14,y-34,28,14);ctx.fillStyle='#242c35';ctx.fillRect(x-10,y-14,20,8);ctx.fillStyle='#f4b36c';ctx.fillRect(x-3,y+3,6,10);ctx.fillStyle='#6b6460';ctx.fillRect(x-26,y+6,6,10);ctx.fillRect(x+20,y+6,6,10);}
+  else{let oy=0;if(b.k==='drill'&&b.pow)oy=Math.round(Math.sin(gt*20));const sz=b.k==='hab'?118:b.k==='drill'?88:64;ctx.drawImage(ICONS['B_'+b.k].c,Math.round(x-sz/2),Math.round(y-sz*.72+oy),sz,sz);
+   if(b.k==='drill'&&b.pow){const n=nodes[b.ni];if(n){ctx.strokeStyle='rgba(255,201,74,.45)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x,y+8);ctx.lineTo(n.x-sx,n.y-sy);ctx.stroke();ctx.setLineDash([]);}ctx.fillStyle='rgba(208,138,85,.6)';for(let i=0;i<3;i++){const a=gt*3+i*2.1;ctx.fillRect(Math.round(x+Math.cos(a)*16),Math.round(y+12+Math.sin(a*1.3)*4),3,3);}}
+   if(b.k!=='hab'){ctx.fillStyle=b.on===false?'#777':b.pow?'#62e08e':'#ff6363';ctx.fillRect(Math.round(x+18),Math.round(y-32),6,6);}}}
+ if(near&&!paused&&near.t!=='bld'){const x=near.o.x-sx,y=near.o.y-sy,r=16+Math.sin(gt*6)*2;ctx.strokeStyle='rgba(255,201,74,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
+ let px=W/2,py=H/2+18;ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(px,py,13,4,0,0,Math.PI*2);ctx.fill();drawHero(ctx,px,py,3,hero.face,Math.floor(hero.anim)%4,hero.moving,gt);
+ ctx.font='bold 12px Arial';ctx.textAlign='center';for(const f of fx){ctx.globalAlpha=clamp(f.t,0,1);ctx.fillStyle='#1a0d08';ctx.fillText(f.s,f.x-sx+1,f.y-sy+1);ctx.fillStyle='#ffe9a8';ctx.fillText(f.s,f.x-sx,f.y-sy);}ctx.globalAlpha=1;ctx.textAlign='left';
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(0,0,W,24);ctx.fillStyle='#f0d9cb';ctx.font='12px Arial';ctx.fillText(`КООРДИНАТЫ ${Math.floor(player.x/TS)} : ${Math.floor(player.y/TS)}  |  ${sunF()>0?'ДЕНЬ':'НОЧЬ'}`,16,16);
+}
+function drawRoom(){const sun=sunF();ctx.fillStyle='#0e0a0d';ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#2b2228';ctx.beginPath();ctx.ellipse(640,630,540,500,0,Math.PI,0);ctx.fill();
+ ctx.fillStyle=sun>0?`rgb(${150+sun*60|0},${80+sun*40|0},${60+sun*20|0})`:'#1a1630';ctx.beginPath();ctx.ellipse(640,250,300,120,0,Math.PI,0);ctx.fill();ctx.strokeStyle='#4a3f44';ctx.lineWidth=6;ctx.stroke();ctx.lineWidth=3;for(let i=1;i<5;i++){const a=Math.PI+i*Math.PI/5;ctx.beginPath();ctx.moveTo(640,250);ctx.lineTo(640+Math.cos(a)*300,250+Math.sin(a)*120);ctx.stroke();}
+ ctx.fillStyle='#40363b';ctx.fillRect(260,250,760,370);for(let y=255;y<615;y+=22)for(let x=265;x<1015;x+=25){const q=((x*13+y*7)%17),rx=x+(q%8),ry=y+(q%6);ctx.fillStyle=q%3===0?'rgba(130,105,104,.22)':'rgba(12,8,10,.18)';ctx.beginPath();ctx.ellipse(rx,ry,4+q%8,2+q%4,q*.1,0,Math.PI*2);ctx.fill();}
+  // Отдельные комнаты, соединённые центральным коридором
+  ctx.fillStyle='#51434a';ctx.fillRect(285,395,710,48);ctx.fillStyle='#76636a';ctx.fillRect(285,395,710,5);ctx.fillRect(285,438,710,5);
+  ctx.fillStyle='#65545a';ctx.fillRect(285,250,710,7);ctx.fillRect(285,250,7,345);ctx.fillRect(988,250,7,345);ctx.fillRect(285,595,710,7);
+  // Дверные проёмы из комнат в коридор
+  for(const [x,w] of [[285,100],[455,150],[675,150],[895,100]]){ctx.fillRect(x,395,w,6);ctx.fillRect(x,438,w,6);}
+  for(const x of [540,740]){ctx.fillRect(x,250,6,115);ctx.fillRect(x,475,6,120);}ctx.fillStyle='#7fd8ff';ctx.fillRect(350,252,72,5);ctx.fillRect(850,252,72,5);ctx.fillStyle='#b7a6a4';ctx.fillRect(300,390,680,5);
+ ctx.fillStyle='#5a4a50';ctx.fillRect(250,244,780,8);
+ ctx.fillStyle='#6b6460';ctx.fillRect(DOOR.x-40,600,80,26);ctx.fillStyle='#ffc94a';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('ВЫХОД',DOOR.x,618);
+ PADS.forEach((p,i)=>{const m=inside.mods[i],hl=near&&near.t==='pad'&&near.i===i;ctx.fillStyle='#2a2026';ctx.beginPath();ctx.ellipse(p[0],p[1]+30,48,16,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle=hl?'#ffc94a':m?'#7fd8ff':'rgba(255,201,74,.35)';ctx.lineWidth=2;if(!m)ctx.setLineDash([5,5]);ctx.stroke();ctx.setLineDash([]);
+  if(m&&m.k==='o2gen'&&m.pow){ctx.fillStyle='rgba(80,190,220,.10)';ctx.strokeStyle='rgba(127,216,255,.45)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p[0],p[1],190,0,Math.PI*2);ctx.fill();ctx.stroke();}if(m){if(m.k==='tree'){const sway=Math.sin(gt*1.4+i)*2;ctx.fillStyle='#68452b';ctx.fillRect(p[0]-5,p[1]-42,10,54);ctx.fillStyle='#27783b';ctx.beginPath();ctx.arc(p[0],p[1]-58+sway,34,0,Math.PI*2);ctx.arc(p[0]-23,p[1]-45+sway,23,0,Math.PI*2);ctx.arc(p[0]+23,p[1]-44+sway,24,0,Math.PI*2);ctx.fill();for(let a=0;a<5;a++){ctx.fillStyle='#d94b36';ctx.beginPath();ctx.arc(p[0]+Math.sin(a*2.4+gt)*20,p[1]-52+Math.cos(a*2.1)*17+sway,4,0,Math.PI*2);ctx.fill();}}else ctx.drawImage(ICONS['B_'+m.k].c,p[0]-38,p[1]-46+(m.pow?Math.round(Math.sin(gt*3)):0),76,76);ctx.fillStyle=m.on===false?'#777':m.pow?'#62e08e':'#ff6363';ctx.fillRect(p[0]+30,p[1]-36,7,7);ctx.fillStyle='#f0d9cb';ctx.fillText(MODS[m.k].n,p[0],p[1]+62);}
+  else{ctx.fillStyle='rgba(255,201,74,.55)';ctx.fillText(`Площадка ${i+1}`,p[0],p[1]+62);}});
+ ctx.textAlign='left';
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(0,0,W,24);ctx.fillStyle='#f0d9cb';ctx.font='12px Arial';ctx.fillText(`ЖИЛОЙ КУПОЛ  |  кислород скафандра не расходуется  |  ${sun>0?'ДЕНЬ':'НОЧЬ'}`,16,16);
+ ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(room.x,room.y,13,4,0,0,Math.PI*2);ctx.fill();drawHero(ctx,room.x,room.y,3,hero.face,Math.floor(hero.anim)%4,hero.moving,gt);}
+function drawMini(){const MS=208/(MAP*TS);mx.fillStyle='#080608';mx.fillRect(0,0,208,208);mx.fillStyle='#8a7a70';for(const it of items){if(Math.abs(it.x-player.x)<1400&&Math.abs(it.y-player.y)<1400)mx.fillRect(it.x*MS,it.y*MS,1,1);}for(let n of nodes)if(n.seen&&n.amount>0){mx.fillStyle=n.k==='titanium'?'#ffffff':'#e9c18b';mx.fillRect(n.x*MS,n.y*MS,2,2);}for(let b of buildings){mx.fillStyle=b.k==='shuttle'?'#ffc94a':'#75d8ff';mx.fillRect(b.x*MS,b.y*MS,3,3);}mx.fillStyle='#ff7a3d';mx.fillRect(player.x*MS-2,player.y*MS-2,4,4);$('miniTxt').textContent=`Сектор ${Math.floor(player.x/(TS*30))+1}-${Math.floor(player.y/(TS*30))+1} · ${nodes.filter(n=>n.seen&&n.amount>0).length} сигналов`;}
+let miniRefresh=true;
+function draw(){ctx.clearRect(0,0,W,H);ctx.imageSmoothingEnabled=false;if(inside)drawRoom();else drawWorld();if(miniRefresh){drawMini();miniRefresh=false;}}
+
+/* ---------- ИГРОВОЙ ЦИКЛ ---------- */
+function roomBlocked(x,y){if(x<292||x>988||y<258||y>590)return true;const doorway=[[385,455],[605,675],[825,895]].some(([a,b])=>x>=a&&x<=b);if(((y>=392&&y<=401)||(y>=437&&y<=446))&&!doorway)return true;if(y<392||y>446){if((x>=537&&x<=546)||(x>=737&&x<=746))return true;}return false;}
+function step(dt){gt+=dt;saveTick+=dt;if(saveTick>=5){saveTick=0;saveGame();}
+ const K=c=>keys.has(c);let dx=(K('KeyD')||K('ArrowRight')?1:0)-(K('KeyA')||K('ArrowLeft')?1:0),dy=(K('KeyS')||K('ArrowDown')?1:0)-(K('KeyW')||K('ArrowUp')?1:0),len=Math.hypot(dx,dy)||1,rn=run()&&player.st>0,speed=rn?230:145;
+ if(inside){const nx=clamp(room.x+dx/len*speed*dt,295,985),ny=clamp(room.y+dy/len*speed*dt,265,585);if(!roomBlocked(nx,room.y))room.x=nx;if(!roomBlocked(room.x,ny))room.y=ny;}
+ else{player.x=clamp(player.x+dx/len*speed*dt,TS,MAP*TS-TS);player.y=clamp(player.y+dy/len*speed*dt,TS,MAP*TS-TS);}
+ hero.moving=!!(dx||dy);if(dx)hero.face=dx>0?1:-1;if(hero.moving)hero.anim+=dt*(rn?13:9);else hero.anim=0;
+ let inOxygen=false;for(const hab of buildings.filter(b=>b.k==='hab')){if(!inside&&dist(player.x,player.y,hab.x,hab.y)<240&&hab.mods.some(m=>m&&m.k==='o2gen'&&m.pow))inOxygen=true;}if(inside&&inside.mods.some(m=>m&&m.k==='o2gen'&&m.pow))inOxygen=true;if(inOxygen)player.o2=Math.min(100,player.o2+dt*4);else if(!inside)player.o2=Math.max(0,player.o2-dt*.22);
+ player.fd=Math.max(0,player.fd-dt*(rn&&hero.moving?.45:.3));
+ player.en=Math.max(0,player.en-dt*(rn?.6:.15));player.st=clamp(player.st+(rn&&hero.moving?-dt*8:dt*5),0,100);
+ if(player.o2<=0)player.hp=Math.max(0,player.hp-dt*2);if(player.fd<=0)player.hp=Math.max(0,player.hp-dt*1);
+ automation(dt);
+ time+=dt*.18;if(time>=24){time-=24;day++;player.o2=Math.min(100,player.o2+8);log('Наступил новый сол. Запасы скафандра частично пополнены.');let added=0;const room_=180-items.length;for(let i=0;i<40&&added<Math.min(6,room_);i++){const x=rand(TS,MAP*TS-TS),y=rand(TS,MAP*TS-TS);if(dist(x,y,player.x,player.y)>600){const k=pickJunk();items.push({x,y,k,n:k==='scrap'?randInt(1,3):1,id:Math.random()*100});added++;}}if(added)log(`Пылевая буря обнажила новые обломки: ${added}.`,'auto');}
+ scanCd=Math.max(0,scanCd-dt);
+ for(const f of fx){f.t-=dt;f.y-=28*dt;}if(fx.length)fx=fx.filter(f=>f.t>0);
+ hudTick+=dt;if(hudTick>=.2){hudTick-=.2;revealNear();findNear();updateHud();miniRefresh=true;}
+ if(player.hp<=0)respawn();}
+function loop(now){requestAnimationFrame(loop);if(!last)last=now;let dt=Math.min(.05,(now-last)/1000);last=now;
+ if(!paused&&running)step(dt);else gt+=dt;
+ draw();if(invOpen)drawPreview();}
+
+/* ---------- ВВОД (по физическим клавишам — работает на русской раскладке) ---------- */
+const WIN_KEYS={KeyI:'inv',KeyB:'build',KeyT:'tech',KeyM:'colony',Enter:'auto',NumpadEnter:'auto'};
+function toggleWin(w){if(!running||$('overlay').style.display!=='none')return;
+ if(w==='inv'){if(invOpen){closeInv();return;}if(panelOpen())closePanel();openInv();return;}
+ if(openWin===w&&panelOpen()){closePanel();return;}
+ if(invOpen)closeInv();if(buildMode)cancelBuild();({build:buildPanel,tech:techPanel,colony:colonyPanel,auto:autoPanel})[w]();}
+window.addEventListener('keydown',e=>{const c=e.code;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','NumpadEnter'].includes(c))e.preventDefault();
+ if(c==='Escape'){if(invOpen)closeInv();else if(panelOpen())closePanel();else if(buildMode)cancelBuild();else menu();return;}
+ if(WIN_KEYS[c]){if(!e.repeat)toggleWin(WIN_KEYS[c]);return;}
+ if(paused)return;keys.add(c);if(e.repeat)return;
+ if(c==='KeyE')interact();else if(c==='KeyQ')scan();else if(/^Digit[1-9]$/.test(c))selectQuick(+c.slice(5)-1);else if(c==='KeyF')useQuick();});
+window.addEventListener('keyup',e=>keys.delete(e.code));
+window.addEventListener('blur',()=>keys.clear());
+$('quickbar').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b)selectQuick(+b.dataset.q);});$('quickbar').addEventListener('contextmenu',e=>{e.preventDefault();useQuick();});$('pClose').onclick=closePanel;$('tutSkip').onclick=()=>finishTutorial();
+document.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{let h=b.dataset.h;b.blur();if(h==='scan'){if(!paused)scan();}else if(h==='menu')menu();else toggleWin(h);});
+$('inv').addEventListener('click',e=>{const t=e.target.closest('[data-craft],[data-use],[data-filter],#invClose');if(!t)return;if(t.id==='invClose'){closeInv();return;}if(t.dataset.craft)craft(t.dataset.craft);else if(t.dataset.use)useItem(t.dataset.use);else if(t.dataset.filter){invFilter=t.dataset.filter;renderInv();}});
+$('inv').addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('mousedown',e=>{mouseX=e.clientX;mouseY=e.clientY;if(!invOpen)return;const i=slotAt(e.clientX,e.clientY);dragMoved=false;
+ if(i>=0){e.preventDefault();slotClick(i,e.button,e.shiftKey);return;}
+ if(held&&!inInv(e.clientX,e.clientY)){e.preventDefault();dropHeld();}});
+window.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;if(held&&invOpen){if(e.buttons)dragMoved=true;posDrag();}});
+window.addEventListener('mouseup',e=>{mouseX=e.clientX;mouseY=e.clientY;if(!invOpen||dragFrom<0){dragFrom=-1;return;}const from=dragFrom;dragFrom=-1;if(!held||!dragMoved)return;const i=slotAt(e.clientX,e.clientY);if(i>=0&&i!==from){placeHeld(i);renderInv();updDrag();}else if(i<0&&!inInv(e.clientX,e.clientY))dropHeld();});
+window.addEventListener('contextmenu',e=>{if(invOpen)e.preventDefault();});
+$('inv').addEventListener('mousemove',e=>{const t=e.target.closest('[data-k],[data-tk]'),tip=$('tip');if(!t||held){tip.classList.add('hidden');return;}const k=t.dataset.k||t.dataset.tk,r=$('stage').getBoundingClientRect(),s=r.width/W;tip.innerHTML=`<b>${nm(k)}</b><span>${ITEMS[k].d}</span>`;tip.style.left=Math.min(W-260,(e.clientX-r.left)/s+14)+'px';tip.style.top=((e.clientY-r.top)/s+12)+'px';tip.classList.remove('hidden');});
+$('inv').addEventListener('mouseleave',()=>$('tip').classList.add('hidden'));
+cv.addEventListener('contextmenu',e=>{e.preventDefault();if(buildMode)cancelBuild();});
+cv.addEventListener('click',e=>{if(!buildMode||paused||inside)return;let r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width+camera.x,y=(e.clientY-r.top)*H/r.height+camera.y;if(buildMode==='wire'){let bi=-1,bd=75;buildings.forEach((b,i)=>{const d=dist(x,y,b.x,b.y);if(d<bd){bd=d;bi=i;}});if(bi<0){toast('Щёлкните по ракете, куполу, панели или буру');return;}if(wireStart===null){wireStart=bi;toast('Теперь выберите второй объект');return;}if(wireStart===bi){toast('Выберите другой объект');return;}if(wires.some(w=>(w[0]===wireStart&&w[1]===bi)||(w[1]===wireStart&&w[0]===bi))){toast('Эти объекты уже соединены');wireStart=null;return;}if(have('cwire')<1){toast('Закончилась медная проволока');cancelBuild();return;}res.cwire--;playSfx('construction');wires.push([wireStart,bi]);log(`Проведён кабель: ${buildings[wireStart].type} ↔ ${buildings[bi].type}`,'ok');wireStart=null;buildMode=null;$('buildBar').classList.add('hidden');updateHud();return;}if(Math.hypot(x-player.x,y-player.y)>450){toast('Слишком далеко от исследователя');return;}if(buildings.some(b=>Math.hypot(b.x-x,b.y-y)<55)){toast('Место занято');return;}const def=BUILD_DEFS[buildMode];if(!affordable(def.cost)){toast('Недостаточно ресурсов');cancelBuild();return;}pay(def.cost);playSfx('construction');const nb=normB({x,y,type:def.n,k:buildMode,hp:100});buildings.push(nb);if(nb.k==='hab'&&tutorialStage===1)finishTutorial();if(nb.k==='drill'&&!nodeFor(nb))toast('Внимание: рядом нет месторождения — бур будет простаивать');log(`Построено: ${def.n}`,'ok');buildMode=null;$('buildBar').classList.add('hidden');updateHud();});
+
+initWorld();if(loadGame()){log('Сохранённая экспедиция загружена.','ok');}else{newGame();}function fitStage(){let st=$('stage'),scale=Math.min(innerWidth/W,innerHeight/H);st.style.transform=`scale(${scale})`;st.style.transformOrigin='center center';}window.addEventListener('resize',fitStage);fitStage();window.addEventListener('beforeunload',saveGame);updateHud();drawMini();menu();requestAnimationFrame(loop);
+window.__PX={get s(){return {player,res,slots,held,buildings,items,grid,inside,room,openWin,invOpen,paused,running,nodes}},step,automation,syncSlots,slotClick,dropHeld,enterHab,exitHab,toggleWin,interact,normB,saveGame,loadGame,setTime:t=>{time=t;}};
+})();
+</script>
+</body>
+</html>
